@@ -49,4 +49,6 @@ SOURCES += main.cpp
 HEADERS  += Utilities/Logger/logger.h \
     Web/webserver.h \
     configurationparameters.h \
-    Web/usersession.h
+    Web/usersession.h \
+    patient.h \
+    Utilities/countriescode.h
