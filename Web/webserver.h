@@ -16,6 +16,7 @@
 
 #include "configurationparameters.h"
 #include "Utilities/Logger/logger.h"
+#include "Web/usersession.h"
 
 using namespace Wt;
 
@@ -26,9 +27,11 @@ namespace Web
         private: WServer *_myWServer = nullptr;
         private: static WApplication *createUserSession(const WEnvironment& env)
         {
-            /// \todo
+            UserSession * newSession = new UserSession(env);
+            Log::GlobalLogger.msg(Log::INFO, "[Webserver] New user session "
+                                  + newSession->sessionId() + "is started\n");
+            return newSession;
         }
-
         public : WebServer()throw (std::exception)
         {
             _myWServer = new WServer();
@@ -48,6 +51,7 @@ namespace Web
                     ConfigurationParameters::instance()->webServerParameters.AccessLog};
             _myWServer->setServerConfiguration(13, _param);
             _myWServer->addEntryPoint(Wt::Application, &createUserSession);
+            Log::GlobalLogger.msg(Log::INFO, "[Webserver] Webserver is configured\n");
         }
         public : void startServer() throw (std::exception)
         {
