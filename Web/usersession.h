@@ -13,10 +13,14 @@
 
 #include <QString>
 
+#include <Wt/WBootstrapTheme>
+#include <Wt/WLocale>
 #include <Wt/WApplication>
 #include <Wt/WEnvironment>
 
 #include "Utilities/Logger/logger.h"
+
+#include "Web/UI/windowpatient.h"
 
 using namespace Wt;
 
@@ -33,7 +37,15 @@ class UserSession : public WApplication
                               "\t Screen height:      " + QString::number(env.screenHeight()).toStdString() + "\n"
                               "\t Support cookies:    " + (env.supportsCookies()   ? "TRUE\n" : "FALSE\n") +
                               "\t Support WebGL:      " + (env.webGL()             ? "TRUE\n" : "FALSE\n") +
-                              "\t Support JavaScript: " + (env.javaScript()        ? "TRUE\n" : "FALSE\n"));
+                              "\t Support JavaScript: " + (env.javaScript()        ? "TRUE\n" : "FALSE\n") +
+                              "\t Localization:       " + env.locale().name() + "\n");
+
+        setTitle("Test webserver");
+        setLocale(env.locale());
+        setTheme(new WBootstrapTheme());
+        enableUpdates(true);
+        Ui::WindowPatient *windowPatient = new Ui::WindowPatient(root());
+        root()->addWidget(windowPatient);
     }
     public : ~UserSession(){}
 };

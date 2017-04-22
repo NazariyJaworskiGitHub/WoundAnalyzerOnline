@@ -51,4 +51,5 @@ HEADERS  += Utilities/Logger/logger.h \
     configurationparameters.h \
     Web/usersession.h \
     patient.h \
-    Utilities/countriescode.h
+    Utilities/countriescode.h \
+    Web/UI/windowpatient.h

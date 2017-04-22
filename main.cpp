@@ -2,7 +2,7 @@
 #include "Utilities/Logger/logger.h"
 #include "Web/webserver.h"
 
-#include <stdexcept>
+//#include <stdexcept>
 #include <QCoreApplication>
 
 int main(int argc, char *argv[])
