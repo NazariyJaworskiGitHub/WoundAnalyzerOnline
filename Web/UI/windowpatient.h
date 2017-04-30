@@ -11,20 +11,18 @@
 #define BOOST_SIGNALS_NO_DEPRECATION_WARNING
 #endif // BOOST_SIGNALS_NO_DEPRECATION_WARNING
 
-#include <vector>
 #include <Wt/WString>
-#include <Wt/WFormWidget>
-#include <Wt/WHBoxLayout>
-#include <Wt/WVBoxLayout>
+#include <Wt/WContainerWidget>
 #include <Wt/WLabel>
 #include <Wt/WLineEdit>
 #include <Wt/WDateEdit>
 #include <Wt/WTimeEdit>
-#include <Wt/WButtonGroup>
-#include <Wt/WRadioButton>
-#include <Wt/WBreak>
-#include <Wt/WComboBox>
-#include <Wt/WStringListModel>
+#include <Wt/WTemplate>
+#include <Wt/WPushButton>
+
+#include <QFile>
+#include <QTextStream>
+
 #include <patient.h>
 
 using namespace Wt;
@@ -36,272 +34,292 @@ namespace Ui
 class WindowPatient : public WContainerWidget
 {
     private:
-    WVBoxLayout *layout;
+    WTemplate *form;
 
-    WLabel *id_Label; WLineEdit *id_LineEdit;
-    WLabel *hospitalisationDate_Label; WDateEdit *hospitalisationDate_DateEdit; WTimeEdit *hospitalisationDate_TimeEdit;
-    WLabel *sex_Label; WButtonGroup *sex_ButtonGroup; WRadioButton *sex_Male_RadioButton; WRadioButton *sex_Female_RadioButton;
-    WLabel *lastName_Label; WLineEdit *lastName_LineEdit;
-    WLabel *firstName_Label; WLineEdit *firstName_LineEdit;
-    WLabel *fatherName_Label; WLineEdit *fatherName_LineEdit;
-    WLabel *dateOfBirth_Label; WDateEdit *dateOfBirth_DateEdit;
-    WLabel *age_Label; WLineEdit *age_LineEdit;
-    WLabel *idDocumentType_Label; WLineEdit *idDocumentType_LineEdit;
-    WLabel *idDocumentNumber_Label; WLineEdit *idDocumentNumber_LineEdit;
-    WLabel *citizenship_Label; WComboBox *citizenship_WComboBox;
-    WLabel *permanentResidenceKey_Label; WButtonGroup *permanentResidenceKey_ButtonGroup; WRadioButton *permanentResidenceKey_City_RadioButton; WRadioButton *permanentResidenceKey_Country_RadioButton; WLineEdit *permanentResidenceAddress_LineEdit;
-    WLabel *permanentResidenceZipCode_Label; WLineEdit *permanentResidenceZipCode_LineEdit;
-    WLabel *placeOfJob_Label; WLineEdit *placeOfJob_LineEdit;
-    WLabel *sender_Label; WLineEdit *sender_LineEdit; WLineEdit *senderCodeYEDRPOU_LineEdit;
-    WLabel *hospitalisationDiagnosis_Label; WLineEdit *hospitalisationDiagnosis_LineEdit; WLineEdit *hospitalisationDiagnosisCodeMKX10_LineEdit;
-    WLabel *hospitalisationDepartment_Label; WLineEdit *hospitalisationDepartment_LineEdit;
-    WLabel *writingOutDepartment_Label; WLineEdit *writingOutDepartment_LineEdit;
-    WLabel *hospitalisationKey_Label; WButtonGroup *hospitalisationKey_ButtonGroup; WRadioButton *hospitalisationKey_Urgent_RadioButton; WRadioButton *hospitalisationKey_Planned_RadioButton;
-    WLabel *HIV_AIDSobservation_Label; WDateEdit *HIV_AIDSobservation_DateEdit;
-    WLabel *bloodType_Label; WLineEdit *bloodType_LineEdit;
-    WLabel *RhAffiliation_Label; WLineEdit *RhAffiliation_LineEdit;
-    WLabel *VasermanaReaction_Label; WDateEdit *VasermanaReaction_DateEdit;
-    WLabel *allergicReactions_Label; WLineEdit *allergicReactions_LineEdit;
-    WLabel *hospitalisationInCurrentYear_Label; WButtonGroup *hospitalisationInCurrentYear_ButtonGroup; WRadioButton *hospitalisationInCurrentYear_Firstly_RadioButton; WRadioButton *hospitalisationInCurrentYear_Repeatedly_RadioButton;
-    WLabel *hospitalisationRepeatedlyInMonth_Label; WButtonGroup *hospitalisationRepeatedlyInMonth_ButtonGroup; WRadioButton *hospitalisationRepeatedlyInMonth_Yes_RadioButton; WRadioButton *hospitalisationRepeatedlyInMonth_No_RadioButton;
-    WLabel *writingOutDate_Label; WDateEdit *writingOutDate_DateEdit; WTimeEdit *writingOutDate_TimeEdit;
-    WLabel *hospitalisationDays_Label; WLineEdit *hospitalisationDays_LineEdit;
+    WLineEdit *ministry;
+    WLineEdit *hospital;
+    WLineEdit *hospitalYEDRPOU;
+    WLineEdit *id;
+    WDateEdit *hospDate;
+    WTimeEdit *hospTime;
+    WComboBox *sexKey;
+    WLineEdit *lastName;
+    WLineEdit *firstName;
+    WLineEdit *fatherName;
+    WDateEdit *birthDate;
+    WLineEdit *age;
+    WLineEdit *idDocType;
+    WLineEdit *idDocNumber;
+    WComboBox *citizenship;
+    WComboBox *residenceKey;
+    WLineEdit *residenceAddress;
+    WLineEdit *resZipCode;
+    WLineEdit *placeOfJob;
+    WLineEdit *sender;
+    WLineEdit *senderYEDRPOU;
+    WLineEdit *hospDiag;
+    WLineEdit *hospDiagMKX10;
+    WLineEdit *hospDep;
+    WLineEdit *wrOutDep;
+    WComboBox *hospKey;
+    WDateEdit *HIVobservDate;
+    WLineEdit *bloodType;
+    WLineEdit *RhAffiliation;
+    WDateEdit *VasReactDate;
+    WLineEdit *allergReact;
+    WComboBox *hospInCurrentYearKey;
+    WComboBox *hospRepeatedlyInMonthKey;
+    WDateEdit *wrOutDate;
+    WTimeEdit *wrOutTime;
+    WLineEdit *hospDays;
 
-    std::vector<WHBoxLayout*> _localLayouts;
-    std::vector<WVBoxLayout*> _localLayoutsForTips;
+    WPushButton *changeModeButton;
 
-    private: void _addTip(char *str, WWidget *w) noexcept
+    bool _editMode;
+    public : bool isEditMode() const noexcept {return _editMode;}
+
+    public : void setEditMode()
     {
-        w->setToolTip(WString::fromUTF8(str));
-        _localLayoutsForTips.push_back(new WVBoxLayout());
-        _localLayoutsForTips.back()->addWidget(w);
-        WLabel *l = new WLabel(WString::fromUTF8(str),this);
-        if(str[0])_localLayoutsForTips.back()->addWidget(l);
-        else _localLayoutsForTips.back()->addStretch(1);
-        _localLayouts.back()->addLayout(_localLayoutsForTips.back());
+        // binding should automatically delete previous widgets
+        form->bindWidget("_1",ministry);
+        form->bindWidget("_2",hospital);
+        form->bindWidget("_3",hospitalYEDRPOU);
+        form->bindWidget("_4",id);
+        form->bindWidget("_5",hospDate);
+        form->bindWidget("_6",hospTime);
+        form->bindWidget("A",sexKey);
+        form->bindWidget("_7",lastName);
+        form->bindWidget("_7_1",firstName);
+        form->bindWidget("_7_2",fatherName);
+        form->bindWidget("_8",birthDate);
+        form->bindWidget("_9",age);
+        form->bindWidget("_10",idDocType);
+        form->bindWidget("_11",idDocNumber);
+        form->bindWidget("_12",citizenship);
+        form->bindWidget("B",residenceKey);
+        form->bindWidget("_13",resZipCode);
+        form->bindWidget("_14",residenceAddress);
+        form->bindWidget("_15",placeOfJob);
+        form->bindWidget("_16",sender);
+        form->bindWidget("_17",senderYEDRPOU);
+        form->bindWidget("_18",hospDiag);
+        form->bindWidget("_19",hospDiagMKX10);
+        form->bindWidget("_20",hospDep);
+        form->bindWidget("_21",wrOutDep);
+        form->bindWidget("C",hospKey);
+        form->bindWidget("_22",HIVobservDate);
+        form->bindWidget("_23",bloodType);
+        form->bindWidget("_24",RhAffiliation);
+        form->bindWidget("_25",VasReactDate);
+        form->bindWidget("_26",allergReact);
+        form->bindWidget("D",hospInCurrentYearKey);
+        form->bindWidget("E",hospRepeatedlyInMonthKey);
+        form->bindWidget("_27",wrOutDate);;
+        form->bindWidget("_28",wrOutTime);
+        form->bindWidget("_29",hospDays);
+        for(auto w:form->widgets())
+        {
+            w->setWidth(WLength(100,WLength::Percentage));
+        }
+        id->setWidth(WLength::Auto);
+        lastName->setWidth(WLength(30,WLength::Percentage));
+        firstName->setWidth(WLength(30,WLength::Percentage));
+        fatherName->setWidth(WLength(30,WLength::Percentage));
+        hospDate->setWidth(WLength(70,WLength::Percentage));
+        hospTime->setWidth(WLength(70,WLength::Percentage));
+        birthDate->setWidth(WLength(70,WLength::Percentage));
+        HIVobservDate->setWidth(WLength(70,WLength::Percentage));
+        VasReactDate->setWidth(WLength(70,WLength::Percentage));
+        wrOutDate->setWidth(WLength(70,WLength::Percentage));
+        wrOutTime->setWidth(WLength(70,WLength::Percentage));
+        _editMode = true;
+        show();
+    }
+
+    public : void setInfoMode()
+    {
+        //unbind widgets, don't delete them
+        form->takeWidget("_1");
+        form->takeWidget("_2");
+        form->takeWidget("_3");
+        form->takeWidget("_4");
+        form->takeWidget("_5");
+        form->takeWidget("_6");
+        form->takeWidget("_7");
+        form->takeWidget("_7_1");
+        form->takeWidget("_7_2");
+        form->takeWidget("_8");
+        form->takeWidget("_9");
+        form->takeWidget("_10");
+        form->takeWidget("_11");
+        form->takeWidget("_12");
+        form->takeWidget("_13");
+        form->takeWidget("_14");
+        form->takeWidget("_15");
+        form->takeWidget("_16");
+        form->takeWidget("_17");
+        form->takeWidget("_18");
+        form->takeWidget("_19");
+        form->takeWidget("_20");
+        form->takeWidget("_21");
+        form->takeWidget("_22");
+        form->takeWidget("_23");
+        form->takeWidget("_24");
+        form->takeWidget("_25");
+        form->takeWidget("_26");
+        form->takeWidget("_27");
+        form->takeWidget("_28");
+        form->takeWidget("_29");
+        form->takeWidget("A");
+        form->takeWidget("B");
+        form->takeWidget("C");
+        form->takeWidget("D");
+        form->takeWidget("E");
+
+        WLabel *l1, *l2, *l3, *l4;
+        form->bindWidget("_1",new WLabel(ministry->text()));
+        form->bindWidget("_2",new WLabel(hospital->text()));
+        form->bindWidget("_3",new WLabel(hospitalYEDRPOU->text()));
+        form->bindWidget("_4",l1 = new WLabel(id->text()));
+        form->bindWidget("_5",new WLabel(hospDate->text()));
+        form->bindWidget("_6",new WLabel(hospTime->text()));
+        form->bindWidget("A",new WLabel(sexKey->currentText()));
+        form->bindWidget("_7",l2 = new WLabel(lastName->text()));
+        form->bindWidget("_7_1",l3 = new WLabel(firstName->text()));
+        form->bindWidget("_7_2",l4 = new WLabel(fatherName->text()));
+        form->bindWidget("_8",new WLabel(birthDate->text()));
+        form->bindWidget("_9",new WLabel(age->text()));
+        form->bindWidget("_10",new WLabel(idDocType->text()));
+        form->bindWidget("_11",new WLabel(idDocNumber->text()));
+        form->bindWidget("_12",new WLabel(citizenship->currentText()));
+        form->bindWidget("B",new WLabel(residenceKey->currentText()));
+        form->bindWidget("_13",new WLabel(resZipCode->text()));
+        form->bindWidget("_14",new WLabel(residenceAddress->text()));
+        form->bindWidget("_15",new WLabel(placeOfJob->text()));
+        form->bindWidget("_16",new WLabel(sender->text()));
+        form->bindWidget("_17",new WLabel(senderYEDRPOU->text()));
+        form->bindWidget("_18",new WLabel(hospDiag->text()));
+        form->bindWidget("_19",new WLabel(hospDiagMKX10->text()));
+        form->bindWidget("_20",new WLabel(hospDep->text()));
+        form->bindWidget("_21",new WLabel(wrOutDep->text()));
+        form->bindWidget("C",new WLabel(hospKey->currentText()));
+        form->bindWidget("_22",new WLabel(HIVobservDate->text()));
+        form->bindWidget("_23",new WLabel(bloodType->text()));
+        form->bindWidget("_24",new WLabel(RhAffiliation->text()));
+        form->bindWidget("_25",new WLabel(VasReactDate->text()));
+        form->bindWidget("_26",new WLabel(allergReact->text()));
+        form->bindWidget("D",new WLabel(hospInCurrentYearKey->currentText()));
+        form->bindWidget("E",new WLabel(hospRepeatedlyInMonthKey->currentText()));
+        form->bindWidget("_27",new WLabel(wrOutDate->text()));
+        form->bindWidget("_28",new WLabel(wrOutTime->text()));
+        form->bindWidget("_29",new WLabel(hospDays->text()));
+        for(auto w:form->widgets())
+        {
+            w->setWidth(WLength(100,WLength::Percentage));
+        }
+        l1->setWidth(WLength::Auto);
+        l2->setWidth(WLength(30,WLength::Percentage));
+        l3->setWidth(WLength(30,WLength::Percentage));
+        l4->setWidth(WLength(30,WLength::Percentage));
+        _editMode = false;
+        show();
+    }
+    private: void _allocateWidgets()
+    {
+        ministry    = new WLineEdit(this);
+        hospital    = new WLineEdit(this);
+        hospitalYEDRPOU = new WLineEdit(this);
+        id          = new WLineEdit(this);
+        hospDate    = new WDateEdit(this);
+        hospTime    = new WTimeEdit(this);
+        hospDate->setFormat("dd.MM.yyyy");
+        hospTime->setFormat("hh:mm");
+        sexKey      = new WComboBox(this);
+        sexKey->addItem("1");
+        sexKey->addItem("2");
+        lastName    = new WLineEdit(this);
+        firstName   = new WLineEdit(this);
+        fatherName  = new WLineEdit(this);
+        birthDate   = new WDateEdit(this);
+        birthDate->setFormat("dd.MM.yyyy");
+        age         = new WLineEdit(this);
+        age->setReadOnly(true);
+        idDocType   = new WLineEdit(this);
+        idDocNumber = new WLineEdit(this);
+        citizenship = new WComboBox(this);
+        for(auto c : Countries::instance().countriesList)
+            citizenship->addItem(WString::fromUTF8(c.nameAlpha3));
+        residenceKey      = new WComboBox(this);
+        residenceKey->addItem(WString::fromUTF8("1"));
+        residenceKey->addItem(WString::fromUTF8("2"));
+        resZipCode      = new WLineEdit(this);
+        residenceAddress = new WLineEdit(this);
+        placeOfJob      = new WLineEdit(this);
+        sender          = new WLineEdit(this);
+        senderYEDRPOU   = new WLineEdit(this);
+        hospDiag        = new WLineEdit(this);
+        hospDiagMKX10   = new WLineEdit(this);
+        hospDep         = new WLineEdit(this);
+        wrOutDep        = new WLineEdit(this);
+        hospKey      = new WComboBox(this);
+        hospKey->addItem(WString::fromUTF8("1"));
+        hospKey->addItem(WString::fromUTF8("2"));
+        HIVobservDate   = new WDateEdit(this);
+        HIVobservDate->setFormat("dd.MM.yyyy");
+        bloodType       = new WLineEdit(this);
+        RhAffiliation   = new WLineEdit(this);
+        VasReactDate    = new WDateEdit(this);
+        VasReactDate->setFormat("dd.MM.yyyy");
+        allergReact     = new WLineEdit(this);
+        hospInCurrentYearKey    = new WComboBox(this);
+        hospInCurrentYearKey->addItem(WString::fromUTF8("1"));
+        hospInCurrentYearKey->addItem(WString::fromUTF8("2"));
+        hospRepeatedlyInMonthKey    = new WComboBox(this);
+        hospRepeatedlyInMonthKey->addItem(WString::fromUTF8("1"));
+        hospRepeatedlyInMonthKey->addItem(WString::fromUTF8("2"));
+        wrOutDate   = new WDateEdit(this);
+        wrOutDate->setFormat("dd.MM.yyyy");
+        wrOutTime   = new WTimeEdit(this);
+        wrOutTime->setFormat("hh:mm");
+        hospDays    = new WLineEdit(this);
+        hospDays->setReadOnly(true);
     }
 
     public : WindowPatient(WContainerWidget *parent) : WContainerWidget(parent)
     {
-        layout = new WVBoxLayout(this);
+        // Load form ----------------------------------------------------------
+        QFile _patientForm("F003_0.htm");
+        _patientForm.open(QIODevice::ReadOnly | QIODevice::Text);
+        QTextStream _input(&_patientForm);
+        WString str = WString::fromUTF8(_input.readAll().toStdString().data());
+        _patientForm.close();
 
-        id_Label    = new WLabel(WString::fromUTF8("МЕДИЧНА КАРТА СТАЦІОНАРНОГО ХВОРОГО №"), this);
-        id_LineEdit = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(id_Label);
-        _localLayouts.back()->addWidget(id_LineEdit);
-        layout->addLayout(_localLayouts.back());
+        // Prepare template ---------------------------------------------------
+        form = new WTemplate(this);
+        form->setTemplateText(str, Wt::XHTMLUnsafeText);
 
-        hospitalisationDate_Label       = new WLabel(WString::fromUTF8("1. Дата госпіталізації"), this);
-        hospitalisationDate_DateEdit  = new WDateEdit(this);
-        hospitalisationDate_TimeEdit    = new WTimeEdit(this);
-        hospitalisationDate_DateEdit->setFormat("dd.MM.yyyy");
-        hospitalisationDate_TimeEdit->setFormat("hh:mm");
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(hospitalisationDate_Label);
-        _addTip("(число, місяць, рік)", hospitalisationDate_DateEdit);
-        _addTip("(година, хвилини)", hospitalisationDate_TimeEdit);
-        sex_Label               = new WLabel(WString::fromUTF8("2. Стать"), this);
-        sex_ButtonGroup         = new WButtonGroup(this);
-        sex_Male_RadioButton    = new WRadioButton(WString::fromUTF8("чоловіча"), this);
-        sex_Female_RadioButton  = new WRadioButton(WString::fromUTF8("жіноча"), this);
-        sex_ButtonGroup->addButton(sex_Male_RadioButton);
-        sex_ButtonGroup->addButton(sex_Female_RadioButton);
-        _localLayouts.back()->addWidget(sex_Label);
-        _localLayouts.back()->addWidget(sex_Male_RadioButton);
-        _localLayouts.back()->addWidget(sex_Female_RadioButton);
-        layout->addLayout(_localLayouts.back());
+        // Allocate widgets ---------------------------------------------------
+        _allocateWidgets();
 
-        lastName_Label      = new WLabel(WString::fromUTF8("3. Прізвище"), this);
-        lastName_LineEdit   = new WLineEdit(this);
-        firstName_Label     = new WLabel(WString::fromUTF8("Ім'я"), this);
-        firstName_LineEdit  = new WLineEdit(this);
-        fatherName_Label    = new WLabel(WString::fromUTF8("По батькові"), this);
-        fatherName_LineEdit = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(lastName_Label);
-        _localLayouts.back()->addWidget(lastName_LineEdit);
-        _localLayouts.back()->addWidget(firstName_Label);
-        _localLayouts.back()->addWidget(firstName_LineEdit);
-        _localLayouts.back()->addWidget(fatherName_Label);
-        _localLayouts.back()->addWidget(fatherName_LineEdit);
-        layout->addLayout(_localLayouts.back());
+        // Bind template widgets ----------------------------------------------
+        setEditMode();
 
-        dateOfBirth_Label       = new WLabel(WString::fromUTF8("4. Дата народження"), this);
-        dateOfBirth_DateEdit    = new WDateEdit(this);
-        dateOfBirth_DateEdit->setFormat("dd.MM.yyyy");
-        age_Label        = new WLabel(WString::fromUTF8("5. Вік"), this);
-        age_LineEdit     = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(dateOfBirth_Label);
-        _addTip("(число, місяць, рік)", dateOfBirth_DateEdit);
-        _localLayouts.back()->addWidget(age_Label);
-        _addTip("(кількість повних років)", age_LineEdit);
-        layout->addLayout(_localLayouts.back());
+        // Show filled template
+        this->addWidget(form);
 
-        idDocumentType_Label        = new WLabel(WString::fromUTF8("6. Документ, що посвідчує особу"), this);
-        idDocumentType_LineEdit     = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(idDocumentType_Label);
-        _localLayouts.back()->addWidget(idDocumentType_LineEdit);
-        _localLayouts.back()->addWidget(new WBreak(this));
-        _localLayouts.back()->addWidget(new WBreak(this));
-        layout->addLayout(_localLayouts.back());
-
-        idDocumentNumber_Label        = new WLabel(WString::fromUTF8("6.1. Номер документа, що посвідчує особу"), this);
-        idDocumentNumber_LineEdit     = new WLineEdit(this);
-        citizenship_Label        = new WLabel(WString::fromUTF8("6.2. Громадянство"), this);
-        citizenship_WComboBox    = new WComboBox(this);
-        for(auto c : Countries::instance().countriesList)
-            citizenship_WComboBox->addItem(WString::fromUTF8(c.nameAlpha3));
-        citizenship_WComboBox->setCurrentIndex(UA_COUNTRY_INDEX);
-
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(idDocumentNumber_Label);
-        _localLayouts.back()->addWidget(idDocumentNumber_LineEdit);
-        _localLayouts.back()->addWidget(citizenship_Label);
-        _addTip("(код країни)", citizenship_WComboBox);
-        layout->addLayout(_localLayouts.back());
-
-        permanentResidenceKey_Label               = new WLabel(WString::fromUTF8("7. Місце проживання"), this);
-        permanentResidenceKey_ButtonGroup         = new WButtonGroup(this);
-        permanentResidenceKey_City_RadioButton    = new WRadioButton(WString::fromUTF8("місто"), this);
-        permanentResidenceKey_Country_RadioButton = new WRadioButton(WString::fromUTF8("село"), this);
-        permanentResidenceAddress_LineEdit        = new WLineEdit(this);
-        permanentResidenceKey_ButtonGroup->addButton(permanentResidenceKey_City_RadioButton);
-        permanentResidenceKey_ButtonGroup->addButton(permanentResidenceKey_Country_RadioButton);
-        permanentResidenceZipCode_Label     = new WLabel(WString::fromUTF8("7.1. Поштовий індекс"), this);
-        permanentResidenceZipCode_LineEdit  = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(permanentResidenceKey_Label);
-        _localLayouts.back()->addWidget(permanentResidenceKey_City_RadioButton);
-        _localLayouts.back()->addWidget(permanentResidenceKey_Country_RadioButton);
-        _addTip("(область, район, населений пункт, вулиця, будинок, квартира)", permanentResidenceAddress_LineEdit);
-        _localLayouts.back()->addWidget(permanentResidenceZipCode_Label);
-        _addTip("", permanentResidenceZipCode_LineEdit);
-        layout->addLayout(_localLayouts.back());
-
-        placeOfJob_Label        = new WLabel(WString::fromUTF8("8. Місце роботи, посада"), this);
-        placeOfJob_LineEdit     = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(placeOfJob_Label);
-        _addTip("(для дітей, учнів, студентів – найменування навчального закладу, пільгова категорія; для інвалідів –  вид і група інвалідності)", placeOfJob_LineEdit);
-
-        layout->addLayout(_localLayouts.back());
-
-        sender_Label        = new WLabel(WString::fromUTF8("9. Ким направлений хворий"), this);
-        sender_LineEdit     = new WLineEdit(this);
-        senderCodeYEDRPOU_LineEdit     = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(sender_Label);
-        _addTip("(найменування закладу охорони здоров’я)", sender_LineEdit);
-        _addTip("(код за ЄДРПОУ)", senderCodeYEDRPOU_LineEdit);
-        layout->addLayout(_localLayouts.back());
-
-        hospitalisationDiagnosis_Label        = new WLabel(WString::fromUTF8("10. Діагноз при госпіталізації"), this);
-        hospitalisationDiagnosis_LineEdit     = new WLineEdit(this);
-        hospitalisationDiagnosisCodeMKX10_LineEdit     = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(hospitalisationDiagnosis_Label);
-        _localLayouts.back()->addWidget(hospitalisationDiagnosis_LineEdit);
-        _addTip("(код за МКХ-10)", hospitalisationDiagnosisCodeMKX10_LineEdit);
-        layout->addLayout(_localLayouts.back());
-
-        hospitalisationDepartment_Label        = new WLabel(WString::fromUTF8("11. Відділення при госпіталізації"), this);
-        hospitalisationDepartment_LineEdit     = new WLineEdit(this);
-        writingOutDepartment_Label        = new WLabel(WString::fromUTF8("12. Відділення при виписці"), this);
-        writingOutDepartment_LineEdit     = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(hospitalisationDepartment_Label);
-        _addTip("(код)", hospitalisationDepartment_LineEdit);
-        _localLayouts.back()->addWidget(writingOutDepartment_Label);
-        _addTip("(код)", writingOutDepartment_LineEdit);
-        layout->addLayout(_localLayouts.back());
-
-        hospitalisationKey_Label               = new WLabel(WString::fromUTF8("13. Госпіталізація"), this);
-        hospitalisationKey_ButtonGroup         = new WButtonGroup(this);
-        hospitalisationKey_Urgent_RadioButton  = new WRadioButton(WString::fromUTF8("ургентна"), this);
-        hospitalisationKey_Planned_RadioButton = new WRadioButton(WString::fromUTF8("планова"), this);
-        hospitalisationKey_ButtonGroup->addButton(hospitalisationKey_Urgent_RadioButton);
-        hospitalisationKey_ButtonGroup->addButton(hospitalisationKey_Planned_RadioButton);
-        HIV_AIDSobservation_Label       = new WLabel(WString::fromUTF8("14. Обстеження на ВІЛ-інфекцію"), this);
-        HIV_AIDSobservation_DateEdit  = new WDateEdit(this);
-        HIV_AIDSobservation_DateEdit->setFormat("dd.MM.yyyy");
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(hospitalisationKey_Label);
-        _localLayouts.back()->addWidget(hospitalisationKey_Urgent_RadioButton);
-        _localLayouts.back()->addWidget(hospitalisationKey_Planned_RadioButton);
-        _localLayouts.back()->addWidget(HIV_AIDSobservation_Label);
-        _addTip("(число, місяць, рік)", HIV_AIDSobservation_DateEdit);
-        layout->addLayout(_localLayouts.back());
-
-        bloodType_Label        = new WLabel(WString::fromUTF8("16. Група крові"), this);
-        bloodType_LineEdit     = new WLineEdit(this);
-        RhAffiliation_Label        = new WLabel(WString::fromUTF8("16. Резус-приналежність"), this);
-        RhAffiliation_LineEdit     = new WLineEdit(this);
-        VasermanaReaction_Label       = new WLabel(WString::fromUTF8("17. Реакція Васермана"), this);
-        VasermanaReaction_DateEdit    = new WDateEdit(this);
-        VasermanaReaction_DateEdit->setFormat("dd.MM.yyyy");
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(bloodType_Label);
-        _localLayouts.back()->addWidget(bloodType_LineEdit);
-        _localLayouts.back()->addWidget(RhAffiliation_Label);
-        _localLayouts.back()->addWidget(RhAffiliation_LineEdit);
-        _localLayouts.back()->addWidget(VasermanaReaction_Label);
-        _addTip("(число, місяць, рік)", VasermanaReaction_DateEdit);
-        layout->addLayout(_localLayouts.back());
-
-        allergicReactions_Label        = new WLabel(WString::fromUTF8("18. Алергічні реакції, гіперчутливість чи непереносимість лікарського засобу"), this);
-        allergicReactions_LineEdit     = new WLineEdit(this);
-        layout->addWidget(allergicReactions_Label);
-        layout->addWidget(allergicReactions_LineEdit);
-
-        hospitalisationInCurrentYear_Label                  = new WLabel(WString::fromUTF8("19. Госпіталізація з приводу цього захворювання в цьому році"), this);
-        hospitalisationInCurrentYear_ButtonGroup            = new WButtonGroup(this);
-        hospitalisationInCurrentYear_Firstly_RadioButton    = new WRadioButton(WString::fromUTF8("вперше"), this);
-        hospitalisationInCurrentYear_Repeatedly_RadioButton = new WRadioButton(WString::fromUTF8("повторно"), this);
-        hospitalisationInCurrentYear_ButtonGroup->addButton(hospitalisationInCurrentYear_Firstly_RadioButton);
-        hospitalisationInCurrentYear_ButtonGroup->addButton(hospitalisationInCurrentYear_Repeatedly_RadioButton);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(hospitalisationInCurrentYear_Label);
-        _localLayouts.back()->addWidget(hospitalisationInCurrentYear_Firstly_RadioButton);
-        _localLayouts.back()->addWidget(hospitalisationInCurrentYear_Repeatedly_RadioButton);
-        layout->addLayout(_localLayouts.back());
-
-        hospitalisationRepeatedlyInMonth_Label              = new WLabel(WString::fromUTF8("19.1. Повторна госпіталізація з приводу цього захворювання до 30 днів"), this);
-        hospitalisationRepeatedlyInMonth_ButtonGroup        = new WButtonGroup(this);
-        hospitalisationRepeatedlyInMonth_Yes_RadioButton    = new WRadioButton(WString::fromUTF8("так"), this);
-        hospitalisationRepeatedlyInMonth_No_RadioButton     = new WRadioButton(WString::fromUTF8("ні"), this);
-        hospitalisationRepeatedlyInMonth_ButtonGroup->addButton(hospitalisationRepeatedlyInMonth_Yes_RadioButton);
-        hospitalisationRepeatedlyInMonth_ButtonGroup->addButton(hospitalisationRepeatedlyInMonth_No_RadioButton);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(hospitalisationRepeatedlyInMonth_Label);
-        _localLayouts.back()->addWidget(hospitalisationRepeatedlyInMonth_Yes_RadioButton);
-        _localLayouts.back()->addWidget(hospitalisationRepeatedlyInMonth_No_RadioButton);
-        layout->addLayout(_localLayouts.back());
-
-        writingOutDate_Label       = new WLabel(WString::fromUTF8("20. Дата виписки/смерті"), this);
-        writingOutDate_DateEdit  = new WDateEdit(this);
-        writingOutDate_TimeEdit    = new WTimeEdit(this);
-        writingOutDate_DateEdit->setFormat("dd.MM.yyyy");
-        writingOutDate_TimeEdit->setFormat("hh:mm");
-        hospitalisationDays_Label        = new WLabel(WString::fromUTF8("21. Проведено ліжко-днів"), this);
-        hospitalisationDays_LineEdit     = new WLineEdit(this);
-        _localLayouts.push_back(new WHBoxLayout());
-        _localLayouts.back()->addWidget(writingOutDate_Label);
-        _addTip("(число, місяць, рік)", writingOutDate_DateEdit);
-        _addTip("(година, хвилини)", writingOutDate_TimeEdit);
-        _localLayouts.back()->addWidget(hospitalisationDays_Label);
-        _localLayouts.back()->addWidget(hospitalisationDays_LineEdit);
-        layout->addLayout(_localLayouts.back());
-
-        this->setLayout(layout);
+        changeModeButton = new WPushButton("Change mode", this);
+        changeModeButton->clicked().connect(std::bind([=] () {
+            if(_editMode)setInfoMode();
+            else setEditMode();
+            }));
+        this->addWidget(changeModeButton);
     }
 
     public : ~WindowPatient()
     {
-        for(auto l:_localLayouts)delete l;
-        for(auto l:_localLayoutsForTips)delete l;
+        // bind widgets to telete them automatically
+        if(!_editMode)
+            setEditMode();
     }
 };
 }

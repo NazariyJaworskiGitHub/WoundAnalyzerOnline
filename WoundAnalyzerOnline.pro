@@ -53,3 +53,5 @@ HEADERS  += Utilities/Logger/logger.h \
     patient.h \
     Utilities/countriescode.h \
     Web/UI/windowpatient.h
+
+DISTFILES +=

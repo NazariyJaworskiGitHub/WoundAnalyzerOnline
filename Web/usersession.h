@@ -13,6 +13,7 @@
 
 #include <QString>
 
+#include <Wt/WCssTheme>
 #include <Wt/WBootstrapTheme>
 #include <Wt/WLocale>
 #include <Wt/WApplication>
@@ -41,8 +42,10 @@ class UserSession : public WApplication
                               "\t Localization:       " + env.locale().name() + "\n");
 
         setTitle("Test webserver");
-        setLocale(env.locale());
-        setTheme(new WBootstrapTheme());
+        //setLocale(env.locale());
+        //setTheme(new WBootstrapTheme());
+        //setCssTheme("polished");
+        //setCssTheme("");
         enableUpdates(true);
         Ui::WindowPatient *windowPatient = new Ui::WindowPatient(root());
         root()->addWidget(windowPatient);
