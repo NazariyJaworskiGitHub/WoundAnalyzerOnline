@@ -44,7 +44,8 @@ LIBS += e:\OpenCV_2.4.13\opencv\localBuild_x32\lib\libopencv_video2413.dll.a
 #For debugging
 CONFIG(debug, release|debug):DEFINES += _DEBUG_MODE
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    Image/imagemanager.cpp
 
 HEADERS  += Utilities/Logger/logger.h \
     Web/webserver.h \
@@ -52,6 +53,10 @@ HEADERS  += Utilities/Logger/logger.h \
     Web/usersession.h \
     patient.h \
     Utilities/countriescode.h \
-    Web/UI/windowpatient.h
+    Web/UI/windowpatient.h \
+    Image/imagemanager.h \
+    Utilities/mathutilities.h \
+    Image/imagemanagerqt.h \
+    Image/imagemanagerwt.h
 
 DISTFILES +=
