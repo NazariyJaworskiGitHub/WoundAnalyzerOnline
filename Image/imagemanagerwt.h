@@ -2,78 +2,42 @@
 #define IMAGEMANAGERWT
 
 #include "Image/imagemanager.h"
-
-#include "Wt/WImage"
-#include "Wt/WRasterImage"
+#include "Wt/WMemoryResource"
+#include "Wt/WLength"
 
 using namespace Wt;
 
 class ImageManagerWt : public WObject, public ImageManager
 {
-    private: WRasterImage *_myWRasterImage = nullptr;
-    public : void updateWImage()
+    public : WMemoryResource *myWMemoryResource = nullptr;
+    public : vector<unsigned char> imageDecodedData;
+    public : void updateWMemoryResource()
     {
-        if(
-                !_myWRasterImage ||
-                _myWRasterImage->width() != _myImage.cols ||
-                _myWRasterImage->height() != _myImage.rows)
-        {
-            if(_myWRasterImage) delete _myWRasterImage;
-
-            _myWRasterImage = new WRasterImage(
-                        "jpeg",_myDrawingLayer.cols,_myDrawingLayer.rows,this);
-        }
-        Mat src = _blendLayers();
-
-        const float scale = 255.0;
-
-        if (src.depth() == CV_8U) {
-            if (src.channels() == 1) {
-                for (int i = 0; i < src.rows; ++i) {
-                    for (int j = 0; j < src.cols; ++j) {
-                        int level = src.at<unsigned char>(i, j);
-                        _myWRasterImage->setPixel(j, i, WColor(level, level, level));
-                    }
-                }
-            } else if (src.channels() == 3) {
-                for (int i = 0; i < src.rows; ++i) {
-                    for (int j = 0; j < src.cols; ++j) {
-                        Vec3b bgr = src.at<Vec3b>(i, j);
-                        _myWRasterImage->setPixel(j, i, WColor(bgr[2], bgr[1], bgr[0]));
-                    }
-                }
-            }
-        } else if (src.depth() == CV_32F) {
-            if (src.channels() == 1) {
-                for (int i = 0; i < src.rows; ++i) {
-                    for (int j = 0; j < src.cols; ++j) {
-                        int level = scale * src.at<float>(i, j);
-                        _myWRasterImage->setPixel(j, i, WColor(level, level, level));
-                    }
-                }
-            } else if (src.channels() == 3) {
-                for (int i = 0; i < src.rows; ++i) {
-                    for (int j = 0; j < src.cols; ++j) {
-                        Vec3f bgr = scale * src.at<Vec3f>(i, j);
-                        _myWRasterImage->setPixel(j, i, WColor(bgr[2], bgr[1], bgr[0]));
-                    }
-                }
-            }
-        }
+        imageDecodedData.clear();
+        vector<int>param = vector<int>(2);
+        param[0] = CV_IMWRITE_JPEG_QUALITY;
+        param[1] = 95;
+        imencode(".jpg", _blendLayers(), imageDecodedData, param);
+        myWMemoryResource->setData(imageDecodedData);
     }
+    public : WLength getWidth() const {return WLength(_myImage.cols);}
+    public : WLength getHeight() const {return WLength(_myImage.rows);}
 
-    public : void openImage(const Mat &image) override
+//    public : void openImage(const Mat &image) override
+//    {
+//        ImageManager::openImage(image);
+//        updateWMemoryResource();
+//    }
+//    public : void openImage(const string &fileName) override
+//    {
+//        ImageManager::openImage(fileName);
+//        updateWMemoryResource();
+//    }
+
+    public : ImageManagerWt(WObject *parent = 0): WObject(parent), ImageManager()
     {
-        ImageManager::openImage(image);
-        updateWImage();
+        myWMemoryResource = new WMemoryResource("image/jpg",this);
     }
-    public : void openImage(const string &fileName) override
-    {
-        ImageManager::openImage(fileName);
-        updateWImage();
-    }
-
-    public : ImageManagerWt(WObject *parent = 0): WObject(parent), ImageManager(){}
     public : ~ImageManagerWt(){}
 };
 

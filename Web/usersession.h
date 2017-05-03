@@ -22,6 +22,7 @@
 #include "Utilities/Logger/logger.h"
 
 #include "Web/UI/windowpatient.h"
+#include "Web/UI/windowimageedit.h"
 
 using namespace Wt;
 
@@ -47,8 +48,10 @@ class UserSession : public WApplication
         //setCssTheme("polished");
         //setCssTheme("");
         enableUpdates(true);
-        Ui::WindowPatient *windowPatient = new Ui::WindowPatient(root());
-        root()->addWidget(windowPatient);
+//        Ui::WindowPatient *windowPatient = new Ui::WindowPatient(root());
+//        root()->addWidget(windowPatient);
+        Ui::WindowImageEdit *windowImageEdit = new Ui::WindowImageEdit(root());
+        root()->addWidget(windowImageEdit);
     }
     public : ~UserSession(){}
 };
