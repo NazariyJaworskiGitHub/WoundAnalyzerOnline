@@ -17,18 +17,22 @@ typedef std::vector<Point2d> PolygonF;
 
 class ImageManager
 {
-    public : bool isImageOpened = false;
-
     protected: Mat _myImage;
     protected: Mat _myDrawingLayer;
 
-    public : double drawingLayerTransparency = 0.5;
+    private: bool _isImageOpened = false;
+    public : bool isImageOpened() const noexcept {return _isImageOpened;}
+    private: double _drawingLayerTransparency = 0.5;
+    public : double getDrawingLayerTransparency() const noexcept {return _drawingLayerTransparency;}
+    private: double _zoomFactor = 1.0;
+    public : double getZoomFactor() const noexcept {return _zoomFactor;}
+    public : void zoom(double percentage);
+    private: double _rulerFactor = 1.0;
+    public : double getRulerFactor() const noexcept {return _rulerFactor;}
+    private: double _rulerLength = 0;
+    public : double getRulerLength() const noexcept {return _rulerLength;}
 
-    public : double zoomFactor = 1.0;
-    public : double rulerFactor = 1.0;
-    public : double rulerLength = 0;
-
-    public : void cleanDrawingLayer();
+    public : void clearDrawingLayer();
 
     public : void highlightCircle(
             const Point2d &p,
@@ -59,8 +63,10 @@ class ImageManager
     protected: Mat _blendLayers() const;
 
     protected: void _onLoadImageCleanup();
+
     public : virtual void openImage(const Mat &image);
     public : virtual void openImage(const string &fileName);
+
     public : void saveImage(const string &fileName) const;
 
     public : ImageManager();

@@ -17,12 +17,15 @@
 #include <Wt/WPushButton>
 #include <Wt/WProgressBar>
 #include <Wt/WFileUpload>
+#include <Wt/WScrollArea>
 #include <Wt/WImage>
 #include <Wt/WSlider>
+#include <Wt/WPanel>
 #include <Wt/WText>
 #include <Wt/WHBoxLayout>
 #include <Wt/WVBoxLayout>
 #include <Wt/WBorderLayout>
+#include <Wt/WStackedWidget>
 
 #include <Image/imagemanagerwt.h>
 
@@ -37,10 +40,7 @@ class WindowImageEdit : public WContainerWidget
     private:
     ImageManagerWt *_myImageManagerWt;
 
-    WToolBar    *_myFileToolBar;
-    WToolBar    *_myEditToolBar;
-    WToolBar    *_myViewToolBar;
-    WToolBar    *_myConfToolBar;
+    WToolBar    *_myToolBar;
 
     WPushButton *_myOpenButton;
     WPushButton *_mySaveButton;
@@ -57,73 +57,82 @@ class WindowImageEdit : public WContainerWidget
 
     WFileUpload *_myWFileUpload;
     WImage      *_myWImage;
+    WScrollArea *_myWImageScrollArea;
 
     WSlider     *_myWSliderZoom;
     WText       *_myWSliderZoomText;
     WSlider     *_myWSliderTransparency;
+    WText       *_myWSliderTransparencyText;
 
-    WText       *_myProgressBar;
+    WPanel      *_myProgressBar;
+    WText       *_myProgressBarText;
+
+    public : void redrawWImage()
+    {
+        _myImageManagerWt->updateWMemoryResource();
+        _myWImage->setResource(_myImageManagerWt->myWMemoryResource);
+        _myWImage->resize(WLength::Auto,WLength::Auto);
+        _myWImageScrollArea->resize(WLength::Auto,WLength(300));
+    }
 
     public : WindowImageEdit(WContainerWidget *parent) : WContainerWidget(parent)
     {
         _myImageManagerWt = new ImageManagerWt(this);
 
-        WBorderLayout *mainLayout = new WBorderLayout();
-        WHBoxLayout *toolBarLayout = new WHBoxLayout();
+        this->setOverflow(OverflowHidden);
+        WVBoxLayout *mainLayout = new WVBoxLayout(this);
 
-        _myFileToolBar = new Wt::WToolBar(this);
-        _myEditToolBar = new Wt::WToolBar(this);
-        _myViewToolBar = new Wt::WToolBar(this);
-        _myConfToolBar = new Wt::WToolBar(this);
+        _myToolBar = new Wt::WToolBar(this);
 
         _myOpenButton = new  WPushButton("Open", this);
         _myOpenButton->setIcon(WLink("icons/Open.png"));
-        _myFileToolBar->addButton(_myOpenButton);
+        _myToolBar->addButton(_myOpenButton);
 
         _mySaveButton = new  WPushButton("Save", this);
         _mySaveButton->setIcon(WLink("icons/Save.png"));
-        _myFileToolBar->addButton(_mySaveButton);
+        _myToolBar->addButton(_mySaveButton);
 
         _myExportResultsButton = new  WPushButton("Export results", this);
         _myExportResultsButton->setIcon(WLink("icons/Export.png"));
-        _myFileToolBar->addButton(_myExportResultsButton);
+        _myToolBar->addButton(_myExportResultsButton);
 
-        toolBarLayout->addWidget(_myFileToolBar);
+        _myToolBar->addSeparator();
 
         _myPolygonButton = new  WPushButton("Polygon", this);
         _myPolygonButton->setIcon(WLink("icons/Polygon.png"));
-        _myEditToolBar->addButton(_myPolygonButton);
+        _myToolBar->addButton(_myPolygonButton);
 
         _myRulerButton = new  WPushButton("Ruler", this);
         _myRulerButton->setIcon(WLink("icons/Ruler.png"));
-        _myEditToolBar->addButton(_myRulerButton);
+        _myToolBar->addButton(_myRulerButton);
 
         _myClearButton = new  WPushButton("Clear", this);
         _myClearButton->setIcon(WLink("icons/Clear.png"));
-        _myEditToolBar->addButton(_myClearButton);
+        _myToolBar->addButton(_myClearButton);
 
-        toolBarLayout->addWidget(_myEditToolBar);
+        _myToolBar->addSeparator();
 
         _myZoomInButton = new  WPushButton("Zoom-In", this);
         _myZoomInButton->setIcon(WLink("icons/Zoom-In.png"));
-        _myViewToolBar->addButton(_myZoomInButton);
+        _myToolBar->addButton(_myZoomInButton);
 
         _myZoomOutButton = new  WPushButton("Zoom-Out", this);
         _myZoomOutButton->setIcon(WLink("icons/Zoom-Out.png"));
-        _myViewToolBar->addButton(_myZoomOutButton);
+        _myToolBar->addButton(_myZoomOutButton);
 
-        toolBarLayout->addWidget(_myViewToolBar);
+        _myToolBar->addSeparator();
 
         _myConfigureButton = new  WPushButton("Configure", this);
         _myConfigureButton->setIcon(WLink("icons/Configure.png"));
-        _myConfToolBar->addButton(_myConfigureButton);
+        _myToolBar->addButton(_myConfigureButton);
 
-        toolBarLayout->addWidget(_myConfToolBar);
-        mainLayout->add(toolBarLayout, WBorderLayout::North);
-        //mainLayout->addWidget(new WBreak(this));
+        _myToolBar->setCompact(true);
+        _myToolBar->setOrientation(Horizontal);
 
-        WVBoxLayout *centerLayout = new WVBoxLayout();
+        mainLayout->addWidget(_myToolBar);
+
         _myWFileUpload = new WFileUpload(this);
+        _myWFileUpload->setFilters("image/*");
         _myWFileUpload->setProgressBar(new WProgressBar(this));
 
         // Upload automatically when the user entered a file.
@@ -134,51 +143,58 @@ class WindowImageEdit : public WContainerWidget
         // React to a succesfull upload.
         _myWFileUpload->uploaded().connect(std::bind([=] () {
             _myImageManagerWt->openImage(_myWFileUpload->spoolFileName());
-            _myImageManagerWt->updateWMemoryResource();
-            _myWImage->setResource(_myImageManagerWt->myWMemoryResource);
-            _myWImage->resize(_myImageManagerWt->getWidth(),_myImageManagerWt->getHeight());
+            redrawWImage();
         }));
 
         // React to a file upload problem.
         _myWFileUpload->fileTooLarge().connect(std::bind([=] () {
+            mainLayout->addWidget(new WText("Some error!!!",this));
             /// \todo
         }));
 
-        centerLayout->addWidget(_myWFileUpload);
+        mainLayout->addWidget(_myWFileUpload);
 
         _myWImage = new WImage(this);
-        centerLayout->addWidget(_myWImage);
-        mainLayout->add(centerLayout, WBorderLayout::Center);
+        _myWImageScrollArea = new WScrollArea(this);
+        _myWImageScrollArea->setWidget(_myWImage);
+        _myWImageScrollArea->setScrollBarPolicy(WScrollArea::ScrollBarAsNeeded);
 
-        WVBoxLayout *southLayout = new WVBoxLayout();
+        mainLayout->addWidget(_myWImageScrollArea,1);
+
         _myWSliderZoom = new WSlider(this);
         _myWSliderZoomText = new WText("100%",this);
         _myWSliderZoom->setMinimum(10);
-        _myWSliderZoom->setMaximum(100);
+        _myWSliderZoom->setMaximum(400);
         _myWSliderZoom->setValue(100);
         _myWSliderZoom->valueChanged().connect(std::bind([=] () {
-            double delta = _myWSliderZoom->value()/100.0 - _myImageManagerWt->zoomFactor;
-            _myImageManagerWt->zoomFactor += delta;
-
-            _myImageManagerWt->cleanDrawingLayer();
-            _myImageManagerWt->updateWMemoryResource();
-            /// \todo
-
-            _myWImage->setResource(_myImageManagerWt->myWMemoryResource);
-            _myWImage->resize(_myImageManagerWt->getWidth(),_myImageManagerWt->getHeight());
+            if(_myImageManagerWt->isImageOpened())
+            {
+                _myImageManagerWt->zoom(_myWSliderZoom->value());
+                redrawWImage();
+            }
             _myWSliderZoomText->setText(_myWSliderZoom->valueText() + "%");
         }));
-        southLayout->addWidget(_myWSliderZoom,1);
-        southLayout->addWidget(_myWSliderZoomText);
+        WHBoxLayout *zoomSliderLayout = new WHBoxLayout();
+        zoomSliderLayout->addWidget(_myWSliderZoom,1);
+        zoomSliderLayout->addWidget(_myWSliderZoomText);
 
-        _myWSliderTransparency  = new WSlider(this);
-        southLayout->addWidget(_myWSliderTransparency);
+        mainLayout->addLayout(zoomSliderLayout);
 
-        _myProgressBar = new WText("TEST STRING",this);
-        southLayout->addWidget(_myProgressBar);
-        mainLayout->add(southLayout, WBorderLayout::South);
+        _myWSliderTransparency = new WSlider(this);
+        _myWSliderTransparency->setMinimum(10);
+        _myWSliderTransparency->setMaximum(90);
+        _myWSliderTransparency->setValue(50);
+        _myWSliderTransparencyText = new WText("50%",this);
+        WHBoxLayout *transparencySliderLayout = new WHBoxLayout();
+        transparencySliderLayout->addWidget(_myWSliderTransparency,1);
+        transparencySliderLayout->addWidget(_myWSliderTransparencyText);
 
-        setLayout(mainLayout);
+        mainLayout->addLayout(transparencySliderLayout);
+
+        _myProgressBar = new WPanel(this);
+        _myProgressBarText = new WText("TEST STRING",this);
+        _myProgressBar->setCentralWidget(_myProgressBarText);
+        mainLayout->addWidget(_myProgressBar);
     }
     public : ~WindowImageEdit(){}
 };

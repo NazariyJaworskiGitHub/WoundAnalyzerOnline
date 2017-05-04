@@ -50,6 +50,7 @@ class UserSession : public WApplication
         enableUpdates(true);
 //        Ui::WindowPatient *windowPatient = new Ui::WindowPatient(root());
 //        root()->addWidget(windowPatient);
+//        root()->setOverflow(WContainerWidget::OverflowHidden);
         Ui::WindowImageEdit *windowImageEdit = new Ui::WindowImageEdit(root());
         root()->addWidget(windowImageEdit);
     }

@@ -22,18 +22,6 @@ class ImageManagerWt : public WObject, public ImageManager
     }
     public : WLength getWidth() const {return WLength(_myImage.cols);}
     public : WLength getHeight() const {return WLength(_myImage.rows);}
-
-//    public : void openImage(const Mat &image) override
-//    {
-//        ImageManager::openImage(image);
-//        updateWMemoryResource();
-//    }
-//    public : void openImage(const string &fileName) override
-//    {
-//        ImageManager::openImage(fileName);
-//        updateWMemoryResource();
-//    }
-
     public : ImageManagerWt(WObject *parent = 0): WObject(parent), ImageManager()
     {
         myWMemoryResource = new WMemoryResource("image/jpg",this);

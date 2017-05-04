@@ -1,9 +1,19 @@
 #include "imagemanager.h"
 
-void ImageManager::cleanDrawingLayer()
+void ImageManager::zoom(double percentage)
+{
+//    double delta = percentage/100.0 - _zoomFactor;
+//    resize(_myDrawingLayer,_myDrawingLayer,Size(),1.0+delta/_zoomFactor,1.0+delta/_zoomFactor);
+//    _zoomFactor += delta;
+    _zoomFactor += percentage/100.0 - _zoomFactor;
+    clearDrawingLayer();
+    /// \todo redraw
+}
+
+void ImageManager::clearDrawingLayer()
 {
     _myDrawingLayer = Mat(_myImage.rows, _myImage.cols, _myImage.type());
-    resize(_myDrawingLayer,_myDrawingLayer,Size(),zoomFactor,zoomFactor);
+    resize(_myDrawingLayer,_myDrawingLayer,Size(),_zoomFactor,_zoomFactor);
 }
 
 void ImageManager::highlightCircle(const Point2d &p, const Color &col, int radius)
@@ -67,10 +77,10 @@ double ImageManager::drawPolygon(
                         true,
                         polyEdgeCol,
                         thickness);
-            if(rulerLength != 0)
+            if(_rulerLength != 0)
                 _area = contourArea(polygon) *
-                        (rulerFactor / rulerLength) *
-                        (rulerFactor / rulerLength);
+                        (_rulerFactor / _rulerLength) *
+                        (_rulerFactor / _rulerLength);
             if(drawText)
                 putText(
                         _myDrawingLayer,
@@ -127,19 +137,19 @@ double ImageManager::drawRuler(
                         rulerTextCol);
         }
     }
-    rulerLength = _distance;
+    _rulerLength = _distance;
     return _distance;
 }
 
 Mat ImageManager::_blendLayers() const
 {
     Mat _result;
-    cv::resize(_myImage,_result,cv::Size(),zoomFactor,zoomFactor);
+    cv::resize(_myImage,_result,cv::Size(),_zoomFactor,_zoomFactor);
     addWeighted(
                 _result,
-                1.0 - drawingLayerTransparency,
+                1.0 - _drawingLayerTransparency,
                 _myDrawingLayer,
-                drawingLayerTransparency,
+                _drawingLayerTransparency,
                 0.0,
                 _result);
     return _result;
@@ -149,12 +159,12 @@ void ImageManager::_onLoadImageCleanup()
 {
     if(!_myImage.empty())
     {
-        cleanDrawingLayer();
-        isImageOpened = true;
-        zoomFactor = 1.0;
-        rulerFactor = 1.0;
-        rulerLength = 0;
-
+        clearDrawingLayer();
+        _isImageOpened = true;
+        _drawingLayerTransparency = 0.5;
+        _zoomFactor = 1.0;
+        _rulerFactor = 1.0;
+        _rulerLength = 0;
         Log::GlobalLogger.msg(Log::TRACE, "[Image] image is loaded\n");
     }
     else
