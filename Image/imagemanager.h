@@ -24,6 +24,7 @@ class ImageManager
     public : bool isImageOpened() const noexcept {return _isImageOpened;}
     private: double _drawingLayerTransparency = 0.5;
     public : double getDrawingLayerTransparency() const noexcept {return _drawingLayerTransparency;}
+    public : double setDrawingLayerTransparency(double val) noexcept {_drawingLayerTransparency = val;}
     private: double _zoomFactor = 1.0;
     public : double getZoomFactor() const noexcept {return _zoomFactor;}
     public : void zoom(double percentage);

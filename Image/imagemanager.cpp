@@ -147,9 +147,9 @@ Mat ImageManager::_blendLayers() const
     cv::resize(_myImage,_result,cv::Size(),_zoomFactor,_zoomFactor);
     addWeighted(
                 _result,
-                1.0 - _drawingLayerTransparency,
-                _myDrawingLayer,
                 _drawingLayerTransparency,
+                _myDrawingLayer,
+                1.0 - _drawingLayerTransparency,
                 0.0,
                 _result);
     return _result;

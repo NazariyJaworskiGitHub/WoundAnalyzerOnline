@@ -44,7 +44,7 @@ class UserSession : public WApplication
 
         setTitle("Test webserver");
         //setLocale(env.locale());
-        //setTheme(new WBootstrapTheme());
+        setTheme(new WBootstrapTheme());
         //setCssTheme("polished");
         //setCssTheme("");
         enableUpdates(true);

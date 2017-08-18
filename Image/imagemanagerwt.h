@@ -22,6 +22,8 @@ class ImageManagerWt : public WObject, public ImageManager
     }
     public : WLength getWidth() const {return WLength(_myImage.cols);}
     public : WLength getHeight() const {return WLength(_myImage.rows);}
+    public : WLength getZoomedWidth() const {return WLength(_myDrawingLayer.cols);}
+    public : WLength getZoomedHeight() const {return WLength(_myDrawingLayer.rows);}
     public : ImageManagerWt(WObject *parent = 0): WObject(parent), ImageManager()
     {
         myWMemoryResource = new WMemoryResource("image/jpg",this);

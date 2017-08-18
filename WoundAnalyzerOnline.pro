@@ -58,6 +58,7 @@ HEADERS  += Utilities/Logger/logger.h \
     Utilities/mathutilities.h \
     Image/imagemanagerqt.h \
     Image/imagemanagerwt.h \
-    Web/UI/windowimageedit.h
+    Web/UI/windowimageedit.h \
+    Web/UI/dialogprogressbar.h
 
 DISTFILES +=
