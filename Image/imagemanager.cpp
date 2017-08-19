@@ -48,47 +48,54 @@ double ImageManager::drawPolygon(
     double _area = -1;
     if(polygon.size() != 0)
     {
+        std::vector<cv::Point> _tmpPoly;
+        _tmpPoly.resize(polygon.size());
+
         for(unsigned i=0; i<polygon.size(); ++i)
         {
+            _tmpPoly[i].x = polygon[i].x;
+            _tmpPoly[i].y = polygon[i].y;
             circle(
                         _myDrawingLayer,
-                        polygon[i],
+                        _tmpPoly[i],
                         thickness + LINE_RADIUS_THICKNESS_DELTA,
                         polyEdgeCol);
         }
         if(polygon.size() == 2)
             polylines(
                         _myDrawingLayer,
-                        polygon,
+                        _tmpPoly,
                         false,
                         polyEdgeCol,
                         thickness);
         else if(polygon.size() > 2)
         {
-            std::vector<std::vector<Point2d>> _p(1);
-            _p[0] = polygon;
+            std::vector<std::vector<Point>> _p(1);
+            _p[0] = _tmpPoly;
             fillPoly(
                         _myDrawingLayer,
                         _p,
                         polyFillCol);
             polylines(
                         _myDrawingLayer,
-                        polygon,
+                        _tmpPoly,
                         true,
                         polyEdgeCol,
                         thickness);
             if(_rulerLength != 0)
-                _area = contourArea(polygon) *
+            {
+                _area = contourArea(_tmpPoly) *
                         (_rulerFactor / _rulerLength) *
                         (_rulerFactor / _rulerLength);
-            if(drawText)
-                putText(
-                        _myDrawingLayer,
-                        to_string(_area),
-                        polygon[0],
-                        FONT_HERSHEY_PLAIN,
-                        1.0,
-                        polyTextCol);
+                if(drawText)
+                    putText(
+                            _myDrawingLayer,
+                            to_string(_area),
+                            _tmpPoly[0],
+                            FONT_HERSHEY_PLAIN,
+                            1.0,
+                            polyTextCol);
+            }
         }
     }
     return _area;
@@ -161,10 +168,10 @@ void ImageManager::_onLoadImageCleanup()
     {
         clearDrawingLayer();
         _isImageOpened = true;
-        _drawingLayerTransparency = 0.5;
-        _zoomFactor = 1.0;
-        _rulerFactor = 1.0;
-        _rulerLength = 0;
+        _drawingLayerTransparency = TRANSP_INIT / 100.0;
+        _zoomFactor = ZOOM_INIT / 100.0;
+        _rulerFactor = RULER_FACTOR_INIT / 100.0;
+        _rulerLength = RULER_INIT;
         Log::GlobalLogger.msg(Log::TRACE, "[Image] image is loaded\n");
     }
     else

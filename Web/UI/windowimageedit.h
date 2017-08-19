@@ -16,7 +16,6 @@
 #include <Wt/WTabWidget>
 #include <Wt/WPushButton>
 #include <Wt/WFileUpload>
-#include <Wt/WFileDropWidget>
 #include <Wt/WImage>
 #include <Wt/WSlider>
 #include <Wt/WPanel>
@@ -26,8 +25,8 @@
 #include <Wt/WTable>
 #include <Wt/WHBoxLayout>
 #include <Wt/WVBoxLayout>
-#include <Wt/WBorderLayout>
-#include <Wt/WStackedWidget>
+
+#include <Wt/WJavaScript>
 
 #include <Image/imagemanagerwt.h>
 #include <Web/UI/dialogprogressbar.h>
@@ -36,12 +35,10 @@
 
 #define ZOOM_MIN            10
 #define ZOOM_MAX            400
-#define ZOOM_INIT           100
 #define ZOOM_BUTTON_STEP    10
 
 #define TRANSP_MIN          10
 #define TRANSP_MAX          90
-#define TRANSP_INIT         50
 #define TRANSP_BUTTON_STEP  10
 
 using namespace Wt;
@@ -53,64 +50,120 @@ namespace Ui
 class WindowImageEdit : public WContainerWidget
 {
     private:
-    ImageManagerWt  *_myImageManagerWt;
+    ImageManagerWt  *_myImageManagerWt  = nullptr;
 
-    WTable          *_myWTable;
+    WTable          *_myWTable                  = nullptr;
 
-    WToolBar        *_myHeaderToolBar;
+    WToolBar        *_myHeaderToolBar           = nullptr;
 
-    WPushButton     *_myOpenButton;
-    WPushButton     *_mySaveButton;
-    WPushButton     *_myExportButton;
+    WPushButton     *_myOpenButton              = nullptr;
+    WPushButton     *_mySaveButton              = nullptr;
+    WPushButton     *_myExportButton            = nullptr;
 
-    WPushButton     *_myPolygonButton;
-    WPushButton     *_myRulerButton;
-    WPushButton     *_myClearButton;
+    WPushButton     *_myPolygonButton           = nullptr;
+    WPushButton     *_myRulerButton             = nullptr;
+    WPushButton     *_myClearButton             = nullptr;
 
-    WPushButton     *_myZoomInButton;
-    WPushButton     *_myZoomOutButton;
+    WPushButton     *_myZoomInButton            = nullptr;
+    WPushButton     *_myZoomOutButton           = nullptr;
 
-    WPushButton     *_myTransparencyUpButton;
-    WPushButton     *_myTransparencyDownButton;
+    WPushButton     *_myTransparencyUpButton    = nullptr;
+    WPushButton     *_myTransparencyDownButton  = nullptr;
 
-    WPushButton     *_myConfigureButton;
+    WPushButton     *_myConfigureButton         = nullptr;
 
-    WFileUpload     *_myWFileUpload;
-    WFileDropWidget *_myWFileDrop;
-    Web::Ui::DialogProgressbar *_myProgressBarDialog;
+    WFileUpload     *_myWFileUpload             = nullptr;
+    Web::Ui::DialogProgressbar *_myProgressBarDialog    = nullptr;
 
-    WImage          *_myWImage;
-    WScrollArea     *_myWImageScrollArea;
+    WImage          *_myWImage                  = nullptr;
+    WScrollArea     *_myWImageScrollArea        = nullptr;
 
-    WContainerWidget*_myFooterToolBar;
+    WContainerWidget*_myFooterToolBar           = nullptr;
 
-    WLabel          *_myWSliderZoomLabel;
+    WLabel          *_myWSliderZoomLabel        = nullptr;
     WSlider         *_myWSliderZoom;
-    WText           *_myWSliderZoomText;
+    WText           *_myWSliderZoomText         = nullptr;
 
-    WLabel          *_myWSliderTransparencyLabel;
-    WSlider         *_myWSliderTransparency;
-    WText           *_myWSliderTransparencyText;
+    WLabel          *_myWSliderTransparencyLabel    = nullptr;
+    WSlider         *_myWSliderTransparency     = nullptr;
+    WText           *_myWSliderTransparencyText = nullptr;
 
-    WPanel          *_myProgressBar;
-    WText           *_myProgressBarText;
+    WPanel          *_myProgressBar             = nullptr;
+    WText           *_myProgressBarText         = nullptr;
 
-    WVBoxLayout     *_mainLayout;
+    enum Mode{POLYGON_MODE, RULER_MODE, EDIT_MODE};
+
+    Mode            mode                        = POLYGON_MODE;
+    bool            isCreateNewPolygon          = true;
+    std::vector<PolygonF> polygons;
+    PolygonF        rulerPoints;
+
+    double          woundsArea;
+    double          rulerDistance;
+
+    Color polygonEdgeColor            = Color(255, 255, 255);
+    Color polygonColor                = Color(127, 127, 127);
+    Color polygonTextColor            = Color(127, 255, 127);
+    int   polygonEdgeThickness        = 1;
+    Color rulerColor                  = Color(255,   0,   0);
+    Color rulerNodesColor             = Color(255, 255,   0);
+    Color rulerTextColor              = Color(  0, 255, 255);
+    int   rulerThickness              = 1;
 
     public : void redrawWImage()
     {
+        _myImageManagerWt->clearDrawingLayer();
+
+//        rulerDistance = _myImageManagerWt->drawRuler(
+//                        rulerPoints,
+//                        rulerColor,
+//                        rulerTextColor,
+//                        rulerThickness);
+
+        woundsArea = 0;
+        for(auto p: polygons)
+            woundsArea += _myImageManagerWt->drawPolygon(
+                        p,
+                        polygonEdgeColor,
+                        polygonColor,
+                        polygonTextColor,
+                        polygonEdgeThickness);
+//        Q_EMIT updatePolygonArea_signal(woundsArea);
+
+//        if(_nodeToHighlight)
+//        {
+//            if(_isPolygonNodeHighlighted)
+//                ImageManager::instance()->highlightCircle(
+//                            *_nodeToHighlight,
+//                            polygonEdgeColor,
+//                            polygonEdgeThickness);
+//            else
+//                ImageManager::instance()->highlightCircle(
+//                            *_nodeToHighlight,
+//                            rulerNodesColor,
+//                            rulerThickness);
+//        }
+
+//        if(_lineToHighlightA)
+//        {
+//            ImageManager::instance()->highlightLine(
+//                        *_lineToHighlightA,
+//                        *_lineToHighlightB,
+//                        polygonEdgeColor,
+//                        polygonEdgeThickness);
+//        }
+
+//        this->setPixmap(ImageManager::instance()->getImageAsQPixmap());
+
         _myImageManagerWt->updateWMemoryResource();
         _myWImage->setResource(_myImageManagerWt->myWMemoryResource);
         _myWImage->resize(_myImageManagerWt->getZoomedWidth(),_myImageManagerWt->getZoomedHeight());
         _myWImage->setMaximumSize(_myImageManagerWt->getZoomedWidth(),_myImageManagerWt->getZoomedHeight());
-        //_myWImage->resize(WLength::Auto,WLength::Auto);
-        //_myWImageScrollArea->resize(_myImageManagerWt->getZoomedWidth(),_myImageManagerWt->getZoomedHeight());
     }
 
     private : void _onLoadPrepareToolbar()
     {
         _myHeaderToolBar = new WToolBar(this);
-        //_myHeaderToolBar->setPositionScheme(Absolute);
 
         _myOpenButton = new  WPushButton("Open", this);
         _myOpenButton->setIcon(WLink("icons/Open.png"));
@@ -163,19 +216,11 @@ class WindowImageEdit : public WContainerWidget
         _myHeaderToolBar->addButton(_myConfigureButton);
 
         _myWTable->elementAt(0, 0)->addWidget(_myHeaderToolBar);
-        //_myWTable->elementAt(0, 0)->setPositionScheme(Fixed);
-        //_myWTable->elementAt(0, 0)->resize(WLength("100%"),WLength("100%"));
-        //_myWTable->elementAt(0, 0)->setMaximumSize(WLength("100%"),WLength("100%"));
     }
 
     private: void _onLoadPrepareImageArea()
     {
         _myWImage = new WImage(this);
-//        _myWImageScrollArea = new WScrollArea(this);
-//        _myWImageScrollArea->setWidget(_myWImage);
-//        _myWImageScrollArea->setScrollBarPolicy(WScrollArea::ScrollBarAlwaysOn);
-//        _myWImageScrollArea->setPositionScheme(Absolute);
-        //_myWImage->setPositionScheme(Absolute);
 
         _myWFileUpload = new WFileUpload(this);
         _myWFileUpload->setFilters("image/*");
@@ -200,11 +245,8 @@ class WindowImageEdit : public WContainerWidget
         // React to a succesfull upload.
         _myWFileUpload->uploaded().connect(std::bind([=] () {
             _myWFileUpload->hide();
-            //_myWFileDrop->hide();
-
             _myImageManagerWt->openImage(_myWFileUpload->spoolFileName());
             redrawWImage();
-
             _myWImage->show();
         }));
 
@@ -213,45 +255,10 @@ class WindowImageEdit : public WContainerWidget
             Log::GlobalLogger.msg(Log::ERROR,"[Image upload] fileTooLarge() signal\n");
         }));
 
-//        // Upload automatically when the user droped a file.
-//        _myWFileDrop = new WFileDropWidget(this);
-//        _myWFileDrop->drop().connect(std::bind([=] (
-//                    const std::vector<WFileDropWidget::File*>& files) {
-//            for (unsigned i=1; i < files.size(); i++)
-//                _myWFileDrop->cancelUpload(files[i]);
-//            _myWFileDrop->setAcceptDrops(false);
-//            _myProgressBarDialog->show();
-//        }, std::placeholders::_1));
-
-//        // React to a succesfull upload.
-//        //_myWFileDrop->uploaded().connect(_myProgressBarDialog->accept);
-//        _myWFileDrop->uploaded().connect(std::bind([=] (WFileDropWidget::File* file) {
-//            _myWFileUpload->hide();
-//            _myWFileDrop->hide();
-
-//            _myImageManagerWt->openImage(file->uploadedFile().spoolFileName());
-//            redrawWImage();
-
-//            _myWImage->show();
-//        }, std::placeholders::_1));
-
-//        // React to a file upload problem.
-//        _myWFileDrop->tooLarge().connect(std::bind([=] (WFileDropWidget::File *file) {
-//            Log::GlobalLogger.msg(Log::ERROR,"[Image upload] fileTooLarge() signal\n");
-//        }, std::placeholders::_1));
-
-//        _myWFileDrop->uploadFailed().connect(std::bind([=] (WFileDropWidget::File *file) {
-//            Log::GlobalLogger.msg(Log::ERROR,"[Image upload] uploadFailed() signal\n");
-//        }, std::placeholders::_1));
-
         _myWTable->elementAt(2, 0)->addWidget(_myWFileUpload);
-//        _myWTable->elementAt(2, 0)->addWidget(_myWFileDrop);
-        //_myWTable->elementAt(2, 0)->addWidget(_myWImageScrollArea);
         _myWTable->elementAt(2, 0)->addWidget(_myWImage);
-        //_myWTable->elementAt(2, 0)->setPositionScheme(Absolute);
         _myWTable->elementAt(2, 0)->setOverflow(OverflowScroll);
         _myWTable->elementAt(2, 0)->resize(WLength("100%"),WLength("100%"));
-        //_myWTable->elementAt(2, 0)->setMaximumSize(WLength("100%"),WLength("100%"));
         _myWTable->elementAt(2, 0)->setMinimumSize(WLength(MIN_IMAGE_SIZE),WLength(MIN_IMAGE_SIZE));
 
     }
@@ -290,69 +297,146 @@ class WindowImageEdit : public WContainerWidget
         _myFooterToolBar->setLayout(footerLayout);
 
         _myWTable->elementAt(3, 0)->addWidget(_myFooterToolBar);
-        //_myWTable->elementAt(3, 0)->setPositionScheme(Relative);
-        //_myWTable->elementAt(3, 0)->setOffsets(WLength("0px"),Bottom);
-        //_myWTable->elementAt(3, 0)->resize(WLength("100%"),WLength("100%"));
-        //_myWTable->elementAt(3, 0)->setMaximumSize(WLength("100%"),WLength("100%"));
     }
 
     private: void _onLoadPrepareZoomSlider()
     {
         _myWSliderZoom->setMinimum(ZOOM_MIN);
         _myWSliderZoom->setMaximum(ZOOM_MAX);
-        _myWSliderZoom->valueChanged().connect(this,&WindowImageEdit::_onZoomSliderValueChanged);
+        _myWSliderZoom->valueChanged().connect(this,&WindowImageEdit::_changeZoom);
         _myWSliderZoom->setValue(ZOOM_INIT);
         _myZoomInButton->clicked().connect(std::bind([=] () {
-                _myWSliderZoom->setValue(_myWSliderZoom->value() + ZOOM_BUTTON_STEP);
-                _onZoomSliderValueChanged(_myWSliderZoom->value());
+                _changeZoom(_myWSliderZoom->value() + ZOOM_BUTTON_STEP);
         }));
         _myZoomOutButton->clicked().connect(std::bind([=] () {
-                _myWSliderZoom->setValue(_myWSliderZoom->value() - ZOOM_BUTTON_STEP);
-                _onZoomSliderValueChanged(_myWSliderZoom->value());
+                _changeZoom(_myWSliderZoom->value() - ZOOM_BUTTON_STEP);
         }));
     }
 
-    private: void _onZoomSliderValueChanged(int value)
+    private: void _changeZoom(int value)
     {
+        // slider has automatic min/max control
+        _myWSliderZoom->setValue(value);
         if(_myImageManagerWt->isImageOpened())
         {
-            _myImageManagerWt->zoom(value);
+            _myImageManagerWt->zoom(_myWSliderZoom->value());
             redrawWImage();
         }
-        _myWSliderZoomText->setText(std::to_string(value) + "%");
+        _myWSliderZoomText->setText(_myWSliderZoom->valueText() + "%");
     }
 
     private: void _onLoadPrepareTransparencySlider()
     {
         _myWSliderTransparency->setMinimum(TRANSP_MIN);
         _myWSliderTransparency->setMaximum(TRANSP_MAX);
-        _myWSliderTransparency->valueChanged().connect(this,&WindowImageEdit::_onTransparencySliderValueChanged);
+        _myWSliderTransparency->valueChanged().connect(this,&WindowImageEdit::_changeTransparency);
         _myWSliderTransparency->setValue(TRANSP_INIT);
         _myTransparencyUpButton->clicked().connect(std::bind([=] () {
-                _myWSliderTransparency->setValue(_myWSliderTransparency->value() + TRANSP_BUTTON_STEP);
-                _onTransparencySliderValueChanged(_myWSliderTransparency->value());
+                _changeTransparency(_myWSliderTransparency->value() + TRANSP_BUTTON_STEP);
         }));
         _myTransparencyDownButton->clicked().connect(std::bind([=] () {
-                _myWSliderTransparency->setValue(_myWSliderTransparency->value() - TRANSP_BUTTON_STEP);
-                _onTransparencySliderValueChanged(_myWSliderTransparency->value());
+                _changeTransparency(_myWSliderTransparency->value() - TRANSP_BUTTON_STEP);
         }));
 
     }
 
-    private: void _onTransparencySliderValueChanged(int value)
+    private: void _changeTransparency(int value)
+    {
+        // slider has automatic min/max control
+        _myWSliderTransparency->setValue(value);
+        if(_myImageManagerWt->isImageOpened())
+        {
+            _myImageManagerWt->setDrawingLayerTransparency(_myWSliderTransparency->value()/100.0);
+            redrawWImage();
+        }
+        _myWSliderTransparencyText->setText(_myWSliderTransparency->valueText() + "%");
+    }
+
+    private: void _onMouseWentDownEvent(WMouseEvent e)
     {
         if(_myImageManagerWt->isImageOpened())
         {
-            _myImageManagerWt->setDrawingLayerTransparency(value/100.0);
-            redrawWImage();
+            if(e.button() == WMouseEvent::LeftButton)
+            {
+                switch (mode) {
+                case POLYGON_MODE:
+                    if(isCreateNewPolygon)
+                    {
+                        isCreateNewPolygon = false;
+                        PolygonF p;
+                        p.push_back({e.widget().x, e.widget().y});
+                        polygons.push_back(p);
+                    }
+                    else
+                        polygons.back().push_back({e.widget().x, e.widget().y});
+                    redrawWImage();
+                    break;
+//                case RULER_MODE:
+//                    if(rulerPoints.size() == 0)
+//                        rulerPoints.append(ev->pos());
+//                    else if(rulerPoints.size() == 1)
+//                        rulerPoints.append(ev->pos());
+//                    else if(rulerPoints.size() == 2)
+//                    {
+//                        rulerPoints[0] = rulerPoints[1];
+//                        rulerPoints[1] = ev->pos();
+//                    }
+//                    drawAll();
+//                    break;
+//                case EDIT_MODE:
+//                    // note that node has radius thickness + 2
+//                    _nodeToMove = _findNodeWithPosInPolygons(ev->pos());
+//                    if(!_nodeToMove)
+//                        _nodeToMove = _findNodeWithPosInRuler(ev->pos());
+
+//    //                ImageManager::instance()->floodFill(ev->pos());
+//    //                drawAll();
+//                    break;
+                }
+            }
+//            else if(e.button() == WMouseEvent::RightButton)
+//            {
+//                if(mode == EDIT_MODE)
+//                {
+//                    QPointF *nodeToDelete = _findNodeWithPosInPolygons(ev->pos());
+//                    if(nodeToDelete)
+//                    {
+//                        _ptrToPolygonWhereNodeIsFound->erase(nodeToDelete);
+//                        _nodeToMove = nullptr;
+//                        _nodeToHighlight = nullptr;
+//                        _lineToHighlightA = nullptr;
+//                        _lineToHighlightB = nullptr;
+//                    }
+//                    else
+//                    {
+//                        QPointF *a;
+//                        QPointF *b;
+//                        if(_findLineWithPosInPolygons(&a,&b,ev->pos()))
+//                        {
+//                            _ptrToPolygonWhereLineIsFound->insert(b,ev->pos());
+//                            _nodeToMove = nullptr;
+//                            _nodeToHighlight = nullptr;
+//                            _lineToHighlightA = nullptr;
+//                            _lineToHighlightB = nullptr;
+//                        }
+//                    }
+//                    drawAll();
+//                }
+//            }
         }
-        _myWSliderTransparencyText->setText(std::to_string(value) + "%");
+    }
+
+    private: void _initializeMouseControl()
+    {
+            _myWImage->mouseWentDown().connect(this, &WindowImageEdit::_onMouseWentDownEvent);
+    //        _myWImage->mouseDragged().connect(_onMouseDraggedJSlot);
+    //        _myWImage->mouseWheel().connect(std::bind([=] (WMouseEvent &e) {
+    //            _changeZoom(_myWSliderZoom->value() + e.wheelDelta());
+    //        },std::placeholders::_1));
     }
 
     public :WindowImageEdit(WContainerWidget *parent) : WContainerWidget(parent)
     {
-        //this->resize(WLength("800px"),WLength("600px"));
-        //this->resize(WLength("800px"),WLength("600px"));
 
         _myImageManagerWt = new ImageManagerWt(this);
 
@@ -364,6 +448,8 @@ class WindowImageEdit : public WContainerWidget
 
         _onLoadPrepareZoomSlider();
         _onLoadPrepareTransparencySlider();
+
+        _initializeMouseControl();
     }
     public : ~WindowImageEdit(){}
 };

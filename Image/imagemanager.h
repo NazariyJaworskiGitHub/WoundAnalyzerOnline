@@ -9,6 +9,11 @@
 #define NODE_RADIUS_THICKNESS_DELTA 4
 #define LINE_RADIUS_THICKNESS_DELTA 2
 
+#define ZOOM_INIT           100
+#define TRANSP_INIT         50
+#define RULER_FACTOR_INIT   100
+#define RULER_INIT          1
+
 using namespace cv;
 using namespace std;
 
@@ -22,15 +27,15 @@ class ImageManager
 
     private: bool _isImageOpened = false;
     public : bool isImageOpened() const noexcept {return _isImageOpened;}
-    private: double _drawingLayerTransparency = 0.5;
+    private: double _drawingLayerTransparency = TRANSP_INIT / 100.0;
     public : double getDrawingLayerTransparency() const noexcept {return _drawingLayerTransparency;}
-    public : double setDrawingLayerTransparency(double val) noexcept {_drawingLayerTransparency = val;}
-    private: double _zoomFactor = 1.0;
+    public : void setDrawingLayerTransparency(double val) noexcept {_drawingLayerTransparency = val;}
+    private: double _zoomFactor = ZOOM_INIT / 100.0;
     public : double getZoomFactor() const noexcept {return _zoomFactor;}
     public : void zoom(double percentage);
-    private: double _rulerFactor = 1.0;
+    private: double _rulerFactor = RULER_FACTOR_INIT / 100.0;
     public : double getRulerFactor() const noexcept {return _rulerFactor;}
-    private: double _rulerLength = 0;
+    private: double _rulerLength  = RULER_INIT;
     public : double getRulerLength() const noexcept {return _rulerLength;}
 
     public : void clearDrawingLayer();
