@@ -2,12 +2,8 @@
 
 void ImageManager::zoom(double percentage)
 {
-//    double delta = percentage/100.0 - _zoomFactor;
-//    resize(_myDrawingLayer,_myDrawingLayer,Size(),1.0+delta/_zoomFactor,1.0+delta/_zoomFactor);
-//    _zoomFactor += delta;
     _zoomFactor += percentage/100.0 - _zoomFactor;
     clearDrawingLayer();
-    /// \todo redraw
 }
 
 void ImageManager::clearDrawingLayer()

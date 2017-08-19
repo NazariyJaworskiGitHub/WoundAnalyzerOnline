@@ -35,8 +35,10 @@ class ImageManager
     public : void zoom(double percentage);
     private: double _rulerFactor = RULER_FACTOR_INIT / 100.0;
     public : double getRulerFactor() const noexcept {return _rulerFactor;}
+    public : void setRulerFactor(double factor) noexcept {_rulerFactor = factor;}
     private: double _rulerLength  = RULER_INIT;
     public : double getRulerLength() const noexcept {return _rulerLength;}
+    public : void setRulerLength(double length) noexcept {_rulerLength = length;}
 
     public : void clearDrawingLayer();
 

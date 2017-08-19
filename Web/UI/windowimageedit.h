@@ -93,10 +93,10 @@ class WindowImageEdit : public WContainerWidget
 
     enum Mode{POLYGON_MODE, RULER_MODE, EDIT_MODE};
 
-    Mode            mode                        = POLYGON_MODE;
+    Mode            mode                        = EDIT_MODE;
     bool            isCreateNewPolygon          = true;
-    std::vector<PolygonF> polygons;
-    PolygonF        rulerPoints;
+    std::vector<PolygonF>   polygons;
+    PolygonF                rulerPoints;
 
     double          woundsArea;
     double          rulerDistance;
@@ -105,20 +105,30 @@ class WindowImageEdit : public WContainerWidget
     Color polygonColor                = Color(127, 127, 127);
     Color polygonTextColor            = Color(127, 255, 127);
     int   polygonEdgeThickness        = 1;
-    Color rulerColor                  = Color(255,   0,   0);
-    Color rulerNodesColor             = Color(255, 255,   0);
+    Color rulerColor                  = Color(255, 255,   0);
     Color rulerTextColor              = Color(  0, 255, 255);
     int   rulerThickness              = 1;
 
-    public : void redrawWImage()
+
+    private: void _clearPolygonsAndRuler()
+    {
+        for(auto p = polygons.begin(); p!= polygons.end(); ++p)
+            p->clear();
+        polygons.clear();
+        rulerPoints.clear();
+        isCreateNewPolygon = true;
+        _redrawWImage();
+    }
+
+    private: void _redrawWImage()
     {
         _myImageManagerWt->clearDrawingLayer();
 
-//        rulerDistance = _myImageManagerWt->drawRuler(
-//                        rulerPoints,
-//                        rulerColor,
-//                        rulerTextColor,
-//                        rulerThickness);
+        rulerDistance = _myImageManagerWt->drawRuler(
+                        rulerPoints,
+                        rulerColor,
+                        rulerTextColor,
+                        rulerThickness);
 
         woundsArea = 0;
         for(auto p: polygons)
@@ -181,14 +191,44 @@ class WindowImageEdit : public WContainerWidget
 
         _myPolygonButton = new  WPushButton("Polygon", this);
         _myPolygonButton->setIcon(WLink("icons/Polygon.png"));
+        _myPolygonButton->clicked().connect(std::bind([=] () {
+            if(this->mode == POLYGON_MODE)
+            {
+                this->mode = EDIT_MODE;
+                _myPolygonButton->setStyleClass("btn");
+            }
+            else
+            {
+                this->mode = POLYGON_MODE;
+                isCreateNewPolygon = true;
+                _myPolygonButton->setStyleClass("btn-success");
+                _myRulerButton->setStyleClass("btn");
+            }
+        }));
         _myHeaderToolBar->addButton(_myPolygonButton);
 
         _myRulerButton = new  WPushButton("Ruler", this);
         _myRulerButton->setIcon(WLink("icons/Ruler.png"));
+        _myRulerButton->clicked().connect(std::bind([=] () {
+            if(this->mode == RULER_MODE)
+            {
+                this->mode = EDIT_MODE;
+                _myRulerButton->setStyleClass("btn");
+            }
+            else
+            {
+                this->mode = RULER_MODE;
+                _myRulerButton->setStyleClass("btn-success");
+                _myPolygonButton->setStyleClass("btn");
+            }
+        }));
         _myHeaderToolBar->addButton(_myRulerButton);
 
         _myClearButton = new  WPushButton("Clear", this);
         _myClearButton->setIcon(WLink("icons/Clear.png"));
+        _myClearButton->clicked().connect(std::bind([=] () {
+            _clearPolygonsAndRuler();
+        }));
         _myHeaderToolBar->addButton(_myClearButton);
 
         _myHeaderToolBar->addSeparator();
@@ -246,7 +286,7 @@ class WindowImageEdit : public WContainerWidget
         _myWFileUpload->uploaded().connect(std::bind([=] () {
             _myWFileUpload->hide();
             _myImageManagerWt->openImage(_myWFileUpload->spoolFileName());
-            redrawWImage();
+            _redrawWImage();
             _myWImage->show();
         }));
 
@@ -257,9 +297,9 @@ class WindowImageEdit : public WContainerWidget
 
         _myWTable->elementAt(2, 0)->addWidget(_myWFileUpload);
         _myWTable->elementAt(2, 0)->addWidget(_myWImage);
-        _myWTable->elementAt(2, 0)->setOverflow(OverflowScroll);
-        _myWTable->elementAt(2, 0)->resize(WLength("100%"),WLength("100%"));
-        _myWTable->elementAt(2, 0)->setMinimumSize(WLength(MIN_IMAGE_SIZE),WLength(MIN_IMAGE_SIZE));
+        //_myWTable->elementAt(2, 0)->setOverflow(OverflowScroll);
+        //_myWTable->elementAt(2, 0)->resize(WLength("100%"),WLength("100%"));
+        //_myWTable->elementAt(2, 0)->setMinimumSize(WLength(MIN_IMAGE_SIZE),WLength(MIN_IMAGE_SIZE));
 
     }
 
@@ -319,8 +359,15 @@ class WindowImageEdit : public WContainerWidget
         _myWSliderZoom->setValue(value);
         if(_myImageManagerWt->isImageOpened())
         {
+            double delta = _myWSliderZoom->value()/100.0 - _myImageManagerWt->getZoomFactor();
+            for(auto p = polygons.begin(); p!= polygons.end(); ++p)
+                for(auto n = p->begin(); n!= p->end(); ++n)
+                    *n *= 1.0 + delta / _myImageManagerWt->getZoomFactor();
+            for(auto n = rulerPoints.begin(); n!= rulerPoints.end(); ++n)
+                *n *= 1.0 + delta / _myImageManagerWt->getZoomFactor();
+
             _myImageManagerWt->zoom(_myWSliderZoom->value());
-            redrawWImage();
+            _redrawWImage();
         }
         _myWSliderZoomText->setText(_myWSliderZoom->valueText() + "%");
     }
@@ -347,7 +394,7 @@ class WindowImageEdit : public WContainerWidget
         if(_myImageManagerWt->isImageOpened())
         {
             _myImageManagerWt->setDrawingLayerTransparency(_myWSliderTransparency->value()/100.0);
-            redrawWImage();
+            _redrawWImage();
         }
         _myWSliderTransparencyText->setText(_myWSliderTransparency->valueText() + "%");
     }
@@ -369,20 +416,20 @@ class WindowImageEdit : public WContainerWidget
                     }
                     else
                         polygons.back().push_back({e.widget().x, e.widget().y});
-                    redrawWImage();
+                    _redrawWImage();
                     break;
-//                case RULER_MODE:
-//                    if(rulerPoints.size() == 0)
-//                        rulerPoints.append(ev->pos());
-//                    else if(rulerPoints.size() == 1)
-//                        rulerPoints.append(ev->pos());
-//                    else if(rulerPoints.size() == 2)
-//                    {
-//                        rulerPoints[0] = rulerPoints[1];
-//                        rulerPoints[1] = ev->pos();
-//                    }
-//                    drawAll();
-//                    break;
+                case RULER_MODE:
+                    if(rulerPoints.size() == 0)
+                        rulerPoints.push_back({e.widget().x, e.widget().y});
+                    else if(rulerPoints.size() == 1)
+                        rulerPoints.push_back({e.widget().x, e.widget().y});
+                    else if(rulerPoints.size() == 2)
+                    {
+                        rulerPoints[0] = rulerPoints[1];
+                        rulerPoints[1] = {e.widget().x, e.widget().y};
+                    }
+                    _redrawWImage();
+                    break;
 //                case EDIT_MODE:
 //                    // note that node has radius thickness + 2
 //                    _nodeToMove = _findNodeWithPosInPolygons(ev->pos());
@@ -451,7 +498,13 @@ class WindowImageEdit : public WContainerWidget
 
         _initializeMouseControl();
     }
-    public : ~WindowImageEdit(){}
+    public : ~WindowImageEdit()
+    {
+        for(auto p = polygons.begin(); p!= polygons.end(); ++p)
+            p->clear();
+        polygons.clear();
+        rulerPoints.clear();
+    }
 };
 }
 }
