@@ -30,6 +30,7 @@
 
 #include <Image/imagemanagerwt.h>
 #include <Web/UI/dialogprogressbar.h>
+#include <Utilities/mathutilities.h>
 
 #define MIN_IMAGE_SIZE "400px"
 
@@ -76,7 +77,6 @@ class WindowImageEdit : public WContainerWidget
     Web::Ui::DialogProgressbar *_myProgressBarDialog    = nullptr;
 
     WImage          *_myWImage                  = nullptr;
-    WScrollArea     *_myWImageScrollArea        = nullptr;
 
     WContainerWidget*_myFooterToolBar           = nullptr;
 
@@ -100,6 +100,10 @@ class WindowImageEdit : public WContainerWidget
 
     double          woundsArea;
     double          rulerDistance;
+
+    Point2d         *_nodeToMove                    = nullptr;
+    PolygonF        *_ptrToPolygonWhereNodeIsFound  = nullptr;
+    PolygonF        *_ptrToPolygonWhereLineIsFound  = nullptr;
 
     Color polygonEdgeColor            = Color(255, 255, 255);
     Color polygonColor                = Color(127, 127, 127);
@@ -138,32 +142,6 @@ class WindowImageEdit : public WContainerWidget
                         polygonColor,
                         polygonTextColor,
                         polygonEdgeThickness);
-//        Q_EMIT updatePolygonArea_signal(woundsArea);
-
-//        if(_nodeToHighlight)
-//        {
-//            if(_isPolygonNodeHighlighted)
-//                ImageManager::instance()->highlightCircle(
-//                            *_nodeToHighlight,
-//                            polygonEdgeColor,
-//                            polygonEdgeThickness);
-//            else
-//                ImageManager::instance()->highlightCircle(
-//                            *_nodeToHighlight,
-//                            rulerNodesColor,
-//                            rulerThickness);
-//        }
-
-//        if(_lineToHighlightA)
-//        {
-//            ImageManager::instance()->highlightLine(
-//                        *_lineToHighlightA,
-//                        *_lineToHighlightB,
-//                        polygonEdgeColor,
-//                        polygonEdgeThickness);
-//        }
-
-//        this->setPixmap(ImageManager::instance()->getImageAsQPixmap());
 
         _myImageManagerWt->updateWMemoryResource();
         _myWImage->setResource(_myImageManagerWt->myWMemoryResource);
@@ -261,6 +239,8 @@ class WindowImageEdit : public WContainerWidget
     private: void _onLoadPrepareImageArea()
     {
         _myWImage = new WImage(this);
+        _myWImage->decorationStyle().setCursor(Wt::CrossCursor);
+        _myWImage->setJavaScriptMember("oncontextmenu","function() {return false;}");
 
         _myWFileUpload = new WFileUpload(this);
         _myWFileUpload->setFilters("image/*");
@@ -399,10 +379,92 @@ class WindowImageEdit : public WContainerWidget
         _myWSliderTransparencyText->setText(_myWSliderTransparency->valueText() + "%");
     }
 
+    Point2d *_findNodeWithPosInPolygons(const Point2d &pos)
+    {
+        Point2d *ptr = nullptr;
+        for(auto p = polygons.begin(); p!= polygons.end(); ++p)
+        {
+            bool found = false;
+            for(auto n = p->begin(); n!= p->end(); ++n)
+                if(MathUtilities::length(*n, pos) < polygonEdgeThickness + LINE_RADIUS_THICKNESS_DELTA)
+                {
+                    ptr = &*n;
+                    _ptrToPolygonWhereNodeIsFound = &*p;
+                    found = true;
+                    break;
+                }
+            if(found)break;
+        }
+        return ptr;
+    }
+
+    Point2d *_findNodeWithPosInRuler(const Point2d &pos)
+    {
+        Point2d *ptr = nullptr;
+        if(rulerPoints.size() == 1)
+        {
+            if(MathUtilities::length(rulerPoints[0],pos) < rulerThickness+LINE_RADIUS_THICKNESS_DELTA)
+                ptr = &rulerPoints[0];
+        }
+        else if(rulerPoints.size() > 1)
+        {
+            if(MathUtilities::length(rulerPoints[0],pos) < rulerThickness+LINE_RADIUS_THICKNESS_DELTA)
+                ptr = &rulerPoints[0];
+            else if(MathUtilities::length(rulerPoints[1],pos) < rulerThickness+LINE_RADIUS_THICKNESS_DELTA)
+                ptr = &rulerPoints[1];
+        }
+        return ptr;
+    }
+
+    bool _findLineWithPosInPolygons(
+            Point2d **ptrToA,
+            Point2d **ptrToB,
+            const Point2d &pos)
+    {
+        bool found = false;
+        for(auto p = polygons.begin(); p!= polygons.end(); ++p)
+        {
+            if(p->size()>1)
+            {
+                auto n = p->begin();            // begin
+                *ptrToA = &*n;                  // a = first
+                for(++n; n!= p->end(); ++n)     // move to next, so a become prev
+                {
+                    *ptrToB = &*n;              // b = cur
+                    if(MathUtilities::isOnSegment(**ptrToA, **ptrToB, pos))
+                    {
+                        found = true;
+                        break;
+                    }
+                    *ptrToA = &*n;              // a = cur
+                }
+                if(!found)  // check first-last
+                {
+                    *ptrToB =  &p->front();
+                    *ptrToA =  &p->back();
+                    if(MathUtilities::isOnSegment(**ptrToA, **ptrToB, pos))
+                        found = true;
+                }
+            }
+            if(found)
+            {
+                _ptrToPolygonWhereLineIsFound = &*p;
+                break;
+            }
+            else
+            {
+                *ptrToA = nullptr;
+                *ptrToB = nullptr;
+            }
+        }
+        return found;
+    }
+
     private: void _onMouseWentDownEvent(WMouseEvent e)
     {
         if(_myImageManagerWt->isImageOpened())
         {
+            Point2d crd = {e.widget().x, e.widget().y};
             if(e.button() == WMouseEvent::LeftButton)
             {
                 switch (mode) {
@@ -411,72 +473,85 @@ class WindowImageEdit : public WContainerWidget
                     {
                         isCreateNewPolygon = false;
                         PolygonF p;
-                        p.push_back({e.widget().x, e.widget().y});
+                        p.push_back(crd);
                         polygons.push_back(p);
                     }
                     else
-                        polygons.back().push_back({e.widget().x, e.widget().y});
+                        polygons.back().push_back(crd);
                     _redrawWImage();
                     break;
                 case RULER_MODE:
                     if(rulerPoints.size() == 0)
-                        rulerPoints.push_back({e.widget().x, e.widget().y});
+                        rulerPoints.push_back(crd);
                     else if(rulerPoints.size() == 1)
-                        rulerPoints.push_back({e.widget().x, e.widget().y});
+                        rulerPoints.push_back(crd);
                     else if(rulerPoints.size() == 2)
                     {
                         rulerPoints[0] = rulerPoints[1];
-                        rulerPoints[1] = {e.widget().x, e.widget().y};
+                        rulerPoints[1] = crd;
                     }
                     _redrawWImage();
                     break;
-//                case EDIT_MODE:
-//                    // note that node has radius thickness + 2
-//                    _nodeToMove = _findNodeWithPosInPolygons(ev->pos());
-//                    if(!_nodeToMove)
-//                        _nodeToMove = _findNodeWithPosInRuler(ev->pos());
-
-//    //                ImageManager::instance()->floodFill(ev->pos());
-//    //                drawAll();
-//                    break;
+                case EDIT_MODE:
+                    _nodeToMove = _findNodeWithPosInPolygons(crd);
+                    if(!_nodeToMove)
+                        _nodeToMove = _findNodeWithPosInRuler(crd);
+                    break;
                 }
             }
-//            else if(e.button() == WMouseEvent::RightButton)
-//            {
-//                if(mode == EDIT_MODE)
-//                {
-//                    QPointF *nodeToDelete = _findNodeWithPosInPolygons(ev->pos());
-//                    if(nodeToDelete)
-//                    {
-//                        _ptrToPolygonWhereNodeIsFound->erase(nodeToDelete);
-//                        _nodeToMove = nullptr;
-//                        _nodeToHighlight = nullptr;
-//                        _lineToHighlightA = nullptr;
-//                        _lineToHighlightB = nullptr;
-//                    }
-//                    else
-//                    {
-//                        QPointF *a;
-//                        QPointF *b;
-//                        if(_findLineWithPosInPolygons(&a,&b,ev->pos()))
-//                        {
-//                            _ptrToPolygonWhereLineIsFound->insert(b,ev->pos());
-//                            _nodeToMove = nullptr;
-//                            _nodeToHighlight = nullptr;
-//                            _lineToHighlightA = nullptr;
-//                            _lineToHighlightB = nullptr;
-//                        }
-//                    }
-//                    drawAll();
-//                }
-//            }
+            else if(e.button() == WMouseEvent::RightButton)
+            {
+                if(mode == EDIT_MODE)
+                {
+                    Point2d *nodeToDelete = _findNodeWithPosInPolygons(crd);
+                    if(nodeToDelete)
+                    {
+                        _ptrToPolygonWhereNodeIsFound->erase(static_cast<PolygonF::iterator>(nodeToDelete));
+                        _nodeToMove = nullptr;
+                    }
+                    else
+                    {
+                        Point2d *a;
+                        Point2d *b;
+                        if(_findLineWithPosInPolygons(&a,&b,crd))
+                        {
+                            _ptrToPolygonWhereLineIsFound->insert(static_cast<PolygonF::iterator>(b),crd);
+                            _nodeToMove = nullptr;
+                        }
+                    }
+                    _redrawWImage();
+                }
+            }
+        }
+    }
+
+    private: void _onMouseWentUpEvent(WMouseEvent e)
+    {
+        if(this->mode == EDIT_MODE)
+        {
+            _nodeToMove = nullptr;
+        }
+
+    }
+
+    private: void _onMouseDraggedEvent(WMouseEvent e)
+    {
+        if(_myImageManagerWt->isImageOpened())
+        {
+            if(this->mode == EDIT_MODE)
+            {
+                if(_nodeToMove)
+                    *_nodeToMove = {e.widget().x, e.widget().y};
+                _redrawWImage();
+            }
         }
     }
 
     private: void _initializeMouseControl()
     {
-            _myWImage->mouseWentDown().connect(this, &WindowImageEdit::_onMouseWentDownEvent);
-    //        _myWImage->mouseDragged().connect(_onMouseDraggedJSlot);
+        _myWImage->mouseWentDown().connect(this, &WindowImageEdit::_onMouseWentDownEvent);
+        _myWImage->mouseWentUp().connect(this, &WindowImageEdit::_onMouseWentUpEvent);
+        _myWImage->mouseDragged().connect(this, &WindowImageEdit::_onMouseDraggedEvent);
     //        _myWImage->mouseWheel().connect(std::bind([=] (WMouseEvent &e) {
     //            _changeZoom(_myWSliderZoom->value() + e.wheelDelta());
     //        },std::placeholders::_1));
