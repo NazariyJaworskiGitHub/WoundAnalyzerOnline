@@ -17,41 +17,42 @@ namespace Ui
 class DialogProgressbar : public WDialog
 {
     private:
-    WProgressBar    *_myUploadProgressBar;
-//    WTimer          *_myWTimer;
+    WProgressBar    *_myProgressBar;
+    WTimer          *_myWTimer;
     double          _prevProgressbarValue = 0;
     public:
-    WProgressBar* getProgressBar() {return _myUploadProgressBar;}
+    WProgressBar* getProgressBar() {return _myProgressBar;}
     Signal<>        signalStuck;
     DialogProgressbar(
             const Wt::WString& windowTitle,
-            WObject *parent = 0/*,
-            int stuckCheckInterval = 1000*/):
+            WObject *parent = 0,
+            int stuckCheckInterval = 1000):
         WDialog(windowTitle, parent)
     {
-        _myUploadProgressBar = new WProgressBar(this->contents());
+        _myProgressBar = new WProgressBar(this->contents());
 
-        _myUploadProgressBar->progressCompleted().connect(this,&DialogProgressbar::accept);
+        _myProgressBar->progressCompleted().connect(this,&DialogProgressbar::accept);
 
-//        _myWTimer = new WTimer(this);
-//        _myWTimer->setInterval(stuckCheckInterval);
-//        _myWTimer->timeout().connect(std::bind([=] (){
-//            if(_myUploadProgressBar->value()!=_prevProgressbarValue)
-//                _prevProgressbarValue = _myUploadProgressBar->value();
-//            else
-//            {
-//                std::cout << _myUploadProgressBar->value() << " " << _prevProgressbarValue << "\n";
-//                signalStuck.emit();
-//            }
-//        }));
+        _myWTimer = new WTimer(this);
+        _myWTimer->setInterval(stuckCheckInterval);
+        _myWTimer->timeout().connect(std::bind([=] (){
+            if(_myProgressBar->value()!=_prevProgressbarValue)
+                _prevProgressbarValue = _myProgressBar->value();
+            else
+            {
+                std::cout << _myProgressBar->value() << " " << _prevProgressbarValue << "\n";
+                _myWTimer->stop();
+                _myWTimer->start();
+                 signalStuck.emit();
+            }
+        }));
 
-//        this->finished().connect(std::bind([=] () {delete this;}));
+        this->finished().connect(std::bind([=] () {delete this;}));
 
-//        _myWTimer->start();
+        _myWTimer->start();
     }
     ~DialogProgressbar()
     {
-//        _myWTimer->stop();
     }
 };
 }

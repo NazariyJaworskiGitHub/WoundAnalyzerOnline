@@ -28,6 +28,8 @@
 
 #include <Wt/WJavaScript>
 
+#include <Wt/WMessageBox>
+
 #include <Image/imagemanagerwt.h>
 #include <Web/UI/dialogprogressbar.h>
 #include <Utilities/mathutilities.h>
@@ -74,7 +76,7 @@ class WindowImageEdit : public WContainerWidget
     WPushButton     *_myConfigureButton         = nullptr;
 
     WFileUpload     *_myWFileUpload             = nullptr;
-    Web::Ui::DialogProgressbar *_myProgressBarDialog    = nullptr;
+    Web::Ui::DialogProgressbar *_myProgressBarDialog = nullptr;
 
     WImage          *_myWImage                  = nullptr;
 
@@ -236,11 +238,17 @@ class WindowImageEdit : public WContainerWidget
         _myWTable->elementAt(0, 0)->addWidget(_myHeaderToolBar);
     }
 
-    private: void _onLoadPrepareImageArea()
+    private :void _onLoadPrepareImageArea()
     {
         _myWImage = new WImage(this);
         _myWImage->decorationStyle().setCursor(Wt::CrossCursor);
         _myWImage->setJavaScriptMember("oncontextmenu","function() {return false;}");
+        _myWTable->elementAt(2, 0)->addWidget(_myWImage);
+    }
+
+    private: void _onLoadPrepareImageUploader()
+    {
+        if(_myWFileUpload) delete _myWFileUpload;
 
         _myWFileUpload = new WFileUpload(this);
         _myWFileUpload->setFilters("image/*");
@@ -250,13 +258,14 @@ class WindowImageEdit : public WContainerWidget
             if(_myWFileUpload->canUpload())
             {
                 _myProgressBarDialog = new Web::Ui::DialogProgressbar("Upload progress",this);
-                // dialg accept will be emmited on 100%, see _myProgressBarDialog
+                // dialog accept will be emmited on 100%, see _myProgressBarDialog
+                // _myProgressBarDialog will be destroed automatically on finished() signal;
                 _myWFileUpload->setProgressBar(_myProgressBarDialog->getProgressBar());
                 _myProgressBarDialog->show();
                 _myWFileUpload->upload();
 //                _myProgressBarDialog->signalStuck.connect(std::bind([=] () {
 //                    std::cout << "new attempt\n";
-//                    _myWFileUpload->stealSpooledFile();
+//                    //_myWFileUpload->stealSpooledFile();
 //                    _myWFileUpload->upload();
 //                }));
             }
@@ -264,8 +273,9 @@ class WindowImageEdit : public WContainerWidget
 
         // React to a succesfull upload.
         _myWFileUpload->uploaded().connect(std::bind([=] () {
-            _myWFileUpload->hide();
+            //_myWFileUpload->hide();
             _myImageManagerWt->openImage(_myWFileUpload->spoolFileName());
+            delete _myWFileUpload;
             _redrawWImage();
             _myWImage->show();
         }));
@@ -273,14 +283,12 @@ class WindowImageEdit : public WContainerWidget
         // React to a file upload problem.
         _myWFileUpload->fileTooLarge().connect(std::bind([=] () {
             Log::GlobalLogger.msg(Log::ERROR,"[Image upload] fileTooLarge() signal\n");
+            _myProgressBarDialog->reject();
+            WMessageBox::show("", "File too large", Ok);
+            _onLoadPrepareImageUploader();
+
         }));
-
         _myWTable->elementAt(2, 0)->addWidget(_myWFileUpload);
-        _myWTable->elementAt(2, 0)->addWidget(_myWImage);
-        //_myWTable->elementAt(2, 0)->setOverflow(OverflowScroll);
-        //_myWTable->elementAt(2, 0)->resize(WLength("100%"),WLength("100%"));
-        //_myWTable->elementAt(2, 0)->setMinimumSize(WLength(MIN_IMAGE_SIZE),WLength(MIN_IMAGE_SIZE));
-
     }
 
     private: void _onLoadPrepareFooter()
@@ -557,7 +565,7 @@ class WindowImageEdit : public WContainerWidget
     //        },std::placeholders::_1));
     }
 
-    public :WindowImageEdit(WContainerWidget *parent) : WContainerWidget(parent)
+    public: WindowImageEdit(WContainerWidget *parent) : WContainerWidget(parent)
     {
 
         _myImageManagerWt = new ImageManagerWt(this);
@@ -565,7 +573,10 @@ class WindowImageEdit : public WContainerWidget
         _myWTable = new WTable(this);
 
         _onLoadPrepareToolbar();
+
         _onLoadPrepareImageArea();
+
+        _onLoadPrepareImageUploader();
         _onLoadPrepareFooter();
 
         _onLoadPrepareZoomSlider();
