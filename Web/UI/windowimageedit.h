@@ -268,6 +268,9 @@ class WindowImageEdit : public WContainerWidget
 //                    //_myWFileUpload->stealSpooledFile();
 //                    _myWFileUpload->upload();
 //                }));
+//                _myWFileUpload->dataReceived().connect(std::bind([=] (long cur, long tot) {
+//                    std::cout << "current " << cur << " total " << tot << std::endl;
+//                }, std::placeholders::_1, std::placeholders::_1));
             }
         }));
 

@@ -17,39 +17,39 @@ namespace Ui
 class DialogProgressbar : public WDialog
 {
     private:
-    WProgressBar    *_myProgressBar;
-    WTimer          *_myWTimer;
-    double          _prevProgressbarValue = 0;
+    WProgressBar    *_myProgressBar = nullptr;
+//    WTimer          *_myWTimer = nullptr;
+//    double          _prevProgressbarValue = 0;
     public:
     WProgressBar* getProgressBar() {return _myProgressBar;}
-    Signal<>        signalStuck;
+//    Signal<>        signalStuck;
     DialogProgressbar(
             const Wt::WString& windowTitle,
-            WObject *parent = 0,
-            int stuckCheckInterval = 1000):
+            WObject *parent = 0/*,
+            int stuckCheckInterval = 1000*/):
         WDialog(windowTitle, parent)
     {
         _myProgressBar = new WProgressBar(this->contents());
 
         _myProgressBar->progressCompleted().connect(this,&DialogProgressbar::accept);
 
-        _myWTimer = new WTimer(this);
-        _myWTimer->setInterval(stuckCheckInterval);
-        _myWTimer->timeout().connect(std::bind([=] (){
-            if(_myProgressBar->value()!=_prevProgressbarValue)
-                _prevProgressbarValue = _myProgressBar->value();
-            else
-            {
-                std::cout << _myProgressBar->value() << " " << _prevProgressbarValue << "\n";
-                _myWTimer->stop();
-                _myWTimer->start();
-                 signalStuck.emit();
-            }
-        }));
+//        _myWTimer = new WTimer(this);
+//        _myWTimer->setInterval(stuckCheckInterval);
+//        _myWTimer->timeout().connect(std::bind([=] (){
+//            if(_myProgressBar->value()!=_prevProgressbarValue)
+//                _prevProgressbarValue = _myProgressBar->value();
+//            else
+//            {
+//                std::cout << _myProgressBar->value() << " " << _prevProgressbarValue << "\n";
+//                _myWTimer->stop();
+//                _myWTimer->start();
+//                 signalStuck.emit();
+//            }
+//        }));
 
-        this->finished().connect(std::bind([=] () {delete this;}));
+        //this->finished().connect(std::bind([=] () {delete this;}));
 
-        _myWTimer->start();
+//        _myWTimer->start();
     }
     ~DialogProgressbar()
     {
