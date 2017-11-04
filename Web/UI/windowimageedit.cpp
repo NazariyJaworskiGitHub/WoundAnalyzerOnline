@@ -34,6 +34,10 @@ void Web::Ui::WindowImageEdit::redrawWImage()
                         polygonTextColor,
                         polygonEdgeThickness);
 
+        char c[32];
+        std::sprintf(c,"%.2lf",woundsArea);
+        _myTotalAreaLineEdit->setText(c);
+
         _myImageManagerWt->updateWMemoryResource();
         _myWImage->setResource(_myImageManagerWt->myWMemoryResource);
         _myWImage->resize(_myImageManagerWt->getZoomedWidth(),_myImageManagerWt->getZoomedHeight());
@@ -45,20 +49,17 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
 {
     _myHeaderToolBar = new WToolBar(this);
 
-    _myOpenButton = new  WPushButton("Open", this);
-    _myOpenButton->setIcon(WLink("icons/Open.png"));
-    _myOpenButton->setDisabled(true);
-    _myHeaderToolBar->addButton(_myOpenButton);
+//    _myOpenButton = new  WPushButton("Open", this);
+//    _myOpenButton->setIcon(WLink("icons/Open.png"));
+//    _myHeaderToolBar->addButton(_myOpenButton);
 
-    _mySaveButton = new  WPushButton("Save", this);
-    _mySaveButton->setIcon(WLink("icons/Save.png"));
-    _mySaveButton->setDisabled(true);
-    _myHeaderToolBar->addButton(_mySaveButton);
+//    _mySaveButton = new  WPushButton("Save", this);
+//    _mySaveButton->setIcon(WLink("icons/Save.png"));
+//    _myHeaderToolBar->addButton(_mySaveButton);
 
-    _myExportButton = new  WPushButton("Export", this);
-    _myExportButton->setIcon(WLink("icons/Export.png"));
-    _myExportButton->setDisabled(true);
-    _myHeaderToolBar->addButton(_myExportButton);
+//    _myExportButton = new  WPushButton("Export", this);
+//    _myExportButton->setIcon(WLink("icons/Export.png"));
+//    _myHeaderToolBar->addButton(_myExportButton);
 
     _myHeaderToolBar->addSeparator();
 
@@ -178,6 +179,7 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareImageUploader()
         delete _myWFileUpload;
         redrawWImage();
         _myWImage->show();
+        _enableUI();
     }));
 
     // React to a file upload problem.
@@ -217,10 +219,33 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareFooter()
     transparencySliderLayout->addWidget(_myWSliderTransparencyText);
     footerLayout->addLayout(transparencySliderLayout);
 
-    _myProgressBar = new WPanel(this);
-    _myProgressBarText = new WText("TEST STRING",this);
-    _myProgressBar->setCentralWidget(_myProgressBarText);
-    footerLayout->addWidget(_myProgressBar);
+    WLabel *l1 = new WLabel("Ruler factor: ",this);
+    _myRulerFactorSpinBox = new WDoubleSpinBox(this);
+    _myRulerFactorSpinBox->setRange(RULER_FACTOR_MIN,RULER_FACTOR_MAX);
+    _myRulerFactorSpinBox->setValue(RULER_FACTOR_INIT);
+    _myRulerFactorSpinBox->setSingleStep(0.01);
+    _myRulerFactorSpinBox->valueChanged().connect(std::bind([=] (double val) {
+        if(_myImageManagerWt->isImageOpened())
+        {
+            _myImageManagerWt->setRulerFactor(val);
+            redrawWImage();
+        }
+        }, std::placeholders::_1));
+    WLabel *l2 = new WLabel("Total wounds area: ",this);
+    _myTotalAreaLineEdit  = new WLineEdit(this);
+    _myTotalAreaLineEdit->setReadOnly(true);
+    WLabel *l3 = new WLabel("sm<sup>2</sup>",this);
+    _myProgressBarText = new WText("",this);
+
+    WHBoxLayout *progressBarLayout = new WHBoxLayout();
+    progressBarLayout->addWidget(l1);
+    progressBarLayout->addWidget(_myRulerFactorSpinBox);
+    progressBarLayout->addWidget(l2);
+    progressBarLayout->addWidget(_myTotalAreaLineEdit);
+    progressBarLayout->addWidget(l3);
+    progressBarLayout->addWidget(_myProgressBarText);
+
+    footerLayout->addLayout(progressBarLayout);
 
     _myFooterToolBar->setLayout(footerLayout);
 
@@ -239,6 +264,64 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareZoomSlider()
     _myZoomOutButton->clicked().connect(std::bind([=] () {
         _changeZoom(_myWSliderZoom->value() - ZOOM_BUTTON_STEP);
     }));
+}
+
+void Web::Ui::WindowImageEdit::_disableUI()
+{
+//    _myOpenButton->disable();
+//    _mySaveButton->disable();
+//    _myExportButton->disable();
+
+    _myPolygonButton->disable();
+    _myRulerButton->disable();
+    _myClearButton->disable();
+
+    _myZoomInButton->disable();
+    _myZoomOutButton->disable();
+
+    _myTransparencyUpButton->disable();
+    _myTransparencyDownButton->disable();
+
+    _myConfigureButton->disable();
+
+    _myWSliderZoomLabel->disable();
+    _myWSliderZoom->disable();
+    _myWSliderZoomText->disable();
+
+    _myWSliderTransparencyLabel->disable();
+    _myWSliderTransparency->disable();
+    _myWSliderTransparencyText->disable();
+
+    _myRulerFactorSpinBox->disable();
+}
+
+void Web::Ui::WindowImageEdit::_enableUI()
+{
+    //    _myOpenButton->enable();
+    //    _mySaveButton->enable();
+    //    _myExportButton->enable();
+
+    _myPolygonButton->enable();
+    _myRulerButton->enable();
+    _myClearButton->enable();
+
+    _myZoomInButton->enable();
+    _myZoomOutButton->enable();
+
+    _myTransparencyUpButton->enable();
+    _myTransparencyDownButton->enable();
+
+    _myConfigureButton->enable();
+
+    _myWSliderZoomLabel->enable();
+    _myWSliderZoom->enable();
+    _myWSliderZoomText->enable();
+
+    _myWSliderTransparencyLabel->enable();
+    _myWSliderTransparency->enable();
+    _myWSliderTransparencyText->enable();
+
+    _myRulerFactorSpinBox->enable();
 }
 
 void Web::Ui::WindowImageEdit::_changeZoom(int value)
@@ -480,6 +563,8 @@ Web::Ui::WindowImageEdit::WindowImageEdit(WContainerWidget *parent) : WContainer
     _onLoadPrepareTransparencySlider();
 
     _initializeMouseControl();
+
+    _disableUI();
 }
 
 Web::Ui::WindowImageEdit::~WindowImageEdit()

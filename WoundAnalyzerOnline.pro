@@ -28,10 +28,8 @@ LIBS += E:\Boost\boost_1_54_0\lib\libboost_date_time-mgw48-mt-1_54.a
 LIBS += -lws2_32
 LIBS += -lwsock32
 
-
 #Flags
 QMAKE_CXXFLAGS += -Wno-unused-local-typedefs #disable a lot of boost warnings
-
 
 #OpenCV
 INCLUDEPATH += e:\OpenCV_2.4.13\opencv\localBuild\include
@@ -45,7 +43,8 @@ LIBS += e:\OpenCV_2.4.13\opencv\localBuild_x32\lib\libopencv_video2413.dll.a
 CONFIG(debug, release|debug):DEFINES += _DEBUG_MODE
 
 SOURCES += main.cpp \
-    Image/imagemanager.cpp
+    Image/imagemanager.cpp \
+    Web/UI/windowimageedit.cpp
 
 HEADERS  += Utilities/Logger/logger.h \
     Web/webserver.h \
@@ -60,6 +59,7 @@ HEADERS  += Utilities/Logger/logger.h \
     Image/imagemanagerwt.h \
     Web/UI/windowimageedit.h \
     Web/UI/dialogprogressbar.h \
-    Web/fileupload.h
+    Web/fileupload.h \
+    Web/UI/dialogimagesettings.h
 
 DISTFILES +=

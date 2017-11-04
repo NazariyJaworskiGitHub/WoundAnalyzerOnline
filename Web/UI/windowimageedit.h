@@ -13,13 +13,13 @@
 
 #include <Wt/WContainerWidget>
 #include <Wt/WToolBar>
-#include <Wt/WTabWidget>
 #include <Wt/WPushButton>
 #include <Wt/WFileUpload>
 #include <Wt/WImage>
 #include <Wt/WSlider>
 #include <Wt/WPanel>
 #include <Wt/WText>
+#include <Wt/WDoubleSpinBox>
 #include <Wt/WLabel>
 
 #include <Wt/WTable>
@@ -45,6 +45,9 @@
 
 #define THICKNESS_MAX       5
 
+#define RULER_FACTOR_MIN     0.01
+#define RULER_FACTOR_MAX    10.0
+
 using namespace Wt;
 
 namespace Web
@@ -57,7 +60,7 @@ class DialogImageSettings;
 class WindowImageEdit : public WContainerWidget
 {
     private:
-    ImageManagerWt  *_myImageManagerWt  = nullptr;
+    ImageManagerWt  *_myImageManagerWt          = nullptr;
 
     WTable          *_myWTable                  = nullptr;
 
@@ -91,12 +94,14 @@ class WindowImageEdit : public WContainerWidget
     WSlider         *_myWSliderZoom;
     WText           *_myWSliderZoomText         = nullptr;
 
-    WLabel          *_myWSliderTransparencyLabel    = nullptr;
+    WLabel          *_myWSliderTransparencyLabel= nullptr;
     WSlider         *_myWSliderTransparency     = nullptr;
     WText           *_myWSliderTransparencyText = nullptr;
 
     WPanel          *_myProgressBar             = nullptr;
     WText           *_myProgressBarText         = nullptr;
+    WDoubleSpinBox  *_myRulerFactorSpinBox      = nullptr;
+    WLineEdit       *_myTotalAreaLineEdit       = nullptr;
 
     enum Mode{POLYGON_MODE, RULER_MODE, EDIT_MODE};
 
@@ -135,6 +140,10 @@ class WindowImageEdit : public WContainerWidget
     private: void _onLoadPrepareFooter();
 
     private: void _onLoadPrepareZoomSlider();
+
+    private: void _disableUI();
+
+    private: void _enableUI();
 
     private: void _changeZoom(int value);
 

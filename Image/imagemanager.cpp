@@ -84,13 +84,17 @@ double ImageManager::drawPolygon(
                         (_rulerFactor / _rulerLength) *
                         (_rulerFactor / _rulerLength);
                 if(drawText)
+                {
+                    char c[32];
+                    std::sprintf(c,"%.2lf",_area);
                     putText(
                             _myDrawingLayer,
-                            to_string(_area),
+                            c,
                             _tmpPoly[0],
                             FONT_HERSHEY_PLAIN,
                             1.0,
                             polyTextCol);
+                }
             }
         }
     }
@@ -129,15 +133,19 @@ double ImageManager::drawRuler(
                     (ruler[0].y-ruler[1].y)*(ruler[0].y-ruler[1].y));
 
             if(drawText)
+            {
+                char c[32];
+                std::sprintf(c,"%.2lf px",_distance);
                 putText(
                         _myDrawingLayer,
-                        to_string(_distance) + "px",
+                        c,
                         Point(
                             ruler[0].x + (ruler[1].x - ruler[0].x)/2.0,
                             ruler[0].y + (ruler[1].y - ruler[0].y)/2.0),
                         FONT_HERSHEY_PLAIN,
                         1.0,
                         rulerTextCol);
+            }
         }
     }
     _rulerLength = _distance;
@@ -166,7 +174,7 @@ void ImageManager::_onLoadImageCleanup()
         _isImageOpened = true;
         _drawingLayerTransparency = TRANSP_INIT / 100.0;
         _zoomFactor = ZOOM_INIT / 100.0;
-        _rulerFactor = RULER_FACTOR_INIT / 100.0;
+        _rulerFactor = RULER_FACTOR_INIT;
         _rulerLength = RULER_INIT;
         Log::GlobalLogger.msg(Log::TRACE, "[Image] image is loaded\n");
     }
