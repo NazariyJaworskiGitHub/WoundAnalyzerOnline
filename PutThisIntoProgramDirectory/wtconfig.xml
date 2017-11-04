@@ -51,7 +51,7 @@
 	<properties>
 	    <property name="resourcesURL">resources/</property>
 	    <property name="extBaseURL">ext/</property>
-		<property name="favicon">icons/mainicon.png</property>
+		<property name="favicon">icons/MainIcon.png</property>
 	</properties>
     </application-settings>
 </server>

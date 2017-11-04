@@ -43,6 +43,8 @@
 #define TRANSP_MAX          90
 #define TRANSP_BUTTON_STEP  10
 
+#define THICKNESS_MAX       5
+
 using namespace Wt;
 
 namespace Web
@@ -122,11 +124,11 @@ class WindowImageEdit : public WContainerWidget
 
     private: void _clearPolygonsAndRuler();
 
-    private: void _redrawWImage();
+    public : void redrawWImage();
 
-    private : void _onLoadPrepareToolbar();
+    private: void _onLoadPrepareToolbar();
 
-    private :void _onLoadPrepareImageArea();
+    private: void _onLoadPrepareImageArea();
 
     private: void _onLoadPrepareImageUploader();
 

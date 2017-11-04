@@ -15,12 +15,14 @@
 #include <Wt/WBreak>
 #include <Wt/WLabel>
 #include <Wt/WPushButton>
+#include <Wt/WSpinBox>
 #include <Wt/WCssDecorationStyle>
+#include <Wt/WJavaScript>
 
 #include "Web/UI/windowimageedit.h"
 
-#define COLOR_BUTTON_WIDTH  50
-#define COLOR_BUTTON_HEIGHT 20
+#define COLOR_BUTTON_WIDTH  70
+#define COLOR_BUTTON_HEIGHT 25
 
 using namespace Wt;
 
@@ -29,103 +31,127 @@ namespace Web
 namespace Ui
 {
 
+void wcolorToOCVColor(const WColor &wcol, Color &col)
+{
+    col[0] = wcol.blue();
+    col[1] = wcol.green();
+    col[2] = wcol.red();
+    col[3] = wcol.alpha();
+}
+
+std::string OCVColorToCSSColor(const Color &col)
+{
+    std::string str;
+    str.resize(8); // #rrggbb+0
+    std::sprintf(&str[0],"#%02x%02x%02x",(unsigned int)col[2],(unsigned int)col[1],(unsigned int)col[0]);
+    return str;
+}
+
 class DialogImageSettings : public WDialog
 {
-    private: WindowImageEdit *_parent;
-
-    WPushButton *_polygonEdgeColorButton    = nullptr;
-    WPushButton *_polygonColorButton        = nullptr;
-    WPushButton *_polygonTextColorButton    = nullptr;
-    WPushButton *_rulerColorButton          = nullptr;
-    WPushButton *_rulerTextButton           = nullptr;
-    WPushButton *_applyButton               = nullptr;
+    private: WindowImageEdit *_parent       = nullptr;  
 
     public: DialogImageSettings(WindowImageEdit *parent):
-        _parent(parent),
-        WDialog((WObject*)parent)
+        WDialog((WObject*)parent),
+        _parent(parent)
     {
-        _polygonEdgeColorButton = new WPushButton(this->contents());
-        _polygonEdgeColorButton->setThemeStyleEnabled(false);
-        _polygonEdgeColorButton->decorationStyle().setBackgroundColor(WColor(_parent->polygonEdgeColor[0],_parent->polygonEdgeColor[1],_parent->polygonEdgeColor[2],_parent->polygonEdgeColor[3]));
-        _polygonEdgeColorButton->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT));
-        _polygonEdgeColorButton->setValueText("<input type=""color"">");
+        this->setWindowTitle("Image tools settings");
+
+        // Wt hasn't own color picker implementation, so i've changed the line edit with input
+        // "text" implementation to input "color" implementation
+        WLineEdit *_polygonEdgeColorPicker = new WLineEdit();
+        _polygonEdgeColorPicker->setAttributeValue("type", """color""");
+        _polygonEdgeColorPicker->setAttributeValue("value", OCVColorToCSSColor(_parent->polygonEdgeColor));
+        _polygonEdgeColorPicker->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT));
+        _polygonEdgeColorPicker->changed().connect(std::bind([=] () {
+            wcolorToOCVColor(WColor(_polygonEdgeColorPicker->valueText()),_parent->polygonEdgeColor);
+            _parent->redrawWImage();
+        }));
+        this->contents()->addWidget(_polygonEdgeColorPicker);
         this->contents()->addWidget(new WLabel("Polygon edge color"));
         this->contents()->addWidget(new WBreak());
 
-        _polygonColorButton = new WPushButton(this->contents());
-        _polygonColorButton->setThemeStyleEnabled(false);
-        _polygonColorButton->decorationStyle().setBackgroundColor(WColor(_parent->polygonColor[0],_parent->polygonColor[1],_parent->polygonColor[2],_parent->polygonColor[3]));
-        _polygonColorButton->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT));
+        WLineEdit *_polygonColorPicker = new WLineEdit();
+        _polygonColorPicker->setAttributeValue("type", """color""");
+        _polygonColorPicker->setAttributeValue("value", OCVColorToCSSColor(_parent->polygonColor));
+        _polygonColorPicker->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT));
+        _polygonColorPicker->changed().connect(std::bind([=] () {
+            wcolorToOCVColor(WColor(_polygonColorPicker->valueText()),_parent->polygonColor);
+            _parent->redrawWImage();
+        }));
+        this->contents()->addWidget(_polygonColorPicker);
         this->contents()->addWidget(new WLabel("Polygon color"));
         this->contents()->addWidget(new WBreak());
 
-        _polygonTextColorButton = new WPushButton(this->contents());
-        _polygonTextColorButton->setThemeStyleEnabled(false);
-        _polygonTextColorButton->decorationStyle().setBackgroundColor(WColor(_parent->polygonTextColor[0],_parent->polygonTextColor[1],_parent->polygonTextColor[2],_parent->polygonTextColor[3]));
-        _polygonTextColorButton->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT));
+        WLineEdit *_polygonTextColorPicker = new WLineEdit();
+        _polygonTextColorPicker->setAttributeValue("type", """color""");
+        _polygonTextColorPicker->setAttributeValue("value", OCVColorToCSSColor(_parent->polygonTextColor));
+        _polygonTextColorPicker->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT));
+        _polygonTextColorPicker->changed().connect(std::bind([=] () {
+            wcolorToOCVColor(WColor(_polygonTextColorPicker->valueText()),_parent->polygonTextColor);
+            _parent->redrawWImage();
+        }));
+        this->contents()->addWidget(_polygonTextColorPicker);
         this->contents()->addWidget(new WLabel("Polygon text color"));
         this->contents()->addWidget(new WBreak());
 
-        _rulerColorButton = new WPushButton(this->contents());
-        _rulerColorButton->setThemeStyleEnabled(false);
-        _rulerColorButton->decorationStyle().setBackgroundColor(WColor(_parent->rulerColor[0],_parent->rulerColor[1],_parent->rulerColor[2],_parent->rulerColor[3]));
+        WSpinBox *_polygonEdgeThicknessSpinBox = new WSpinBox();
+        _polygonEdgeThicknessSpinBox->setValue(_parent->polygonEdgeThickness);
+        _polygonEdgeThicknessSpinBox->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT-4));//padding and margins
+        _polygonEdgeThicknessSpinBox->setRange(1,THICKNESS_MAX);
+        _polygonEdgeThicknessSpinBox->valueChanged().connect(std::bind([=] (int value) {
+            _parent->polygonEdgeThickness = value;
+            _parent->redrawWImage();
+        },std::placeholders::_1));
+        this->contents()->addWidget(_polygonEdgeThicknessSpinBox);
+        this->contents()->addWidget(new WLabel("Polygon edge thickness"));
+        this->contents()->addWidget(new WBreak());
+
+        WLineEdit *_rulerColorButton = new WLineEdit();
+        _rulerColorButton->setAttributeValue("type", """color""");
+        _rulerColorButton->setAttributeValue("value", OCVColorToCSSColor(_parent->rulerColor));
         _rulerColorButton->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT));
+        _rulerColorButton->changed().connect(std::bind([=] () {
+            wcolorToOCVColor(WColor(_rulerColorButton->valueText()),_parent->rulerColor);
+            _parent->redrawWImage();
+        }));
+        this->contents()->addWidget(_rulerColorButton);
         this->contents()->addWidget(new WLabel("Ruler color"));
         this->contents()->addWidget(new WBreak());
 
-        _rulerTextButton = new WPushButton(this->contents());
-        _rulerTextButton->setThemeStyleEnabled(false);
-        _rulerTextButton->decorationStyle().setBackgroundColor(WColor(_parent->rulerTextColor[0],_parent->rulerTextColor[1],_parent->rulerTextColor[2],_parent->rulerTextColor[3]));
+        WLineEdit *_rulerTextButton = new WLineEdit();
+        _rulerTextButton->setAttributeValue("type", """color""");
+        _rulerTextButton->setAttributeValue("value", OCVColorToCSSColor(_parent->rulerTextColor));
         _rulerTextButton->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT));
+        _rulerTextButton->changed().connect(std::bind([=] () {
+            wcolorToOCVColor(WColor(_rulerTextButton->valueText()),_parent->rulerTextColor);
+            _parent->redrawWImage();
+        }));
+        this->contents()->addWidget(_rulerTextButton);
         this->contents()->addWidget(new WLabel("Ruler text color"));
         this->contents()->addWidget(new WBreak());
 
-        _applyButton = new WPushButton("Apply", this->contents());
+        WSpinBox *_rulerThicknessSpinBox = new WSpinBox();
+        _rulerThicknessSpinBox->setValue(_parent->rulerThickness);
+        _rulerThicknessSpinBox->resize(WLength(COLOR_BUTTON_WIDTH),WLength(COLOR_BUTTON_HEIGHT-4));//padding and margins
+        _rulerThicknessSpinBox->setRange(1,THICKNESS_MAX);
+        _rulerThicknessSpinBox->setMargin(0);
+        _rulerThicknessSpinBox->valueChanged().connect(std::bind([=] (int value) {
+            _parent->rulerThickness = value;
+            _parent->redrawWImage();
+        },std::placeholders::_1));
+        this->contents()->addWidget(_rulerThicknessSpinBox);
+        this->contents()->addWidget(new WLabel("Ruler edge thickness"));
+        this->contents()->addWidget(new WBreak());
+
+        WPushButton *_applyButton = new WPushButton("Apply", this->contents());
         _applyButton->setFloatSide(Side::Right);
         _applyButton->setStyleClass("btn-primary");
-        _applyButton->clicked().connect(this, &accept);
+        _applyButton->clicked().connect(this, &DialogImageSettings::accept);
     }
     public: ~DialogImageSettings(){}
 };
 }
 }
-
-//namespace Ui {
-//class SettingsWidget;
-//}
-
-//// Interact with ImageInterface through parent()->ui->label
-//class SettingsWidget : public QDialog
-//{
-//    Q_OBJECT
-
-//public:
-//    explicit SettingsWidget(ImageInterface* ptr, QWidget *parent = 0);
-//    ~SettingsWidget();
-
-//private: ImageInterface* _ptr = nullptr;
-//private: void _colorUpdate(QColor &_refToParentColor, QPushButton *_refToWidgetButton);
-
-//private Q_SLOTS:
-//    void on_polygonEdge_clicked();
-
-//    void on_polygonColor_clicked();
-
-//    void on_rulerColor_clicked();
-
-//    void on_rulerNodesColor_clicked();
-
-//    void on_polygonEdgeThickness_valueChanged(int arg1);
-
-//    void on_rulerThickness_valueChanged(int arg1);
-
-//    void on_polygonTextColor_clicked();
-
-//    void on_rulerTextColor_clicked();
-
-//private:
-//    Ui::SettingsWidget *ui;
-//};
-
 
 #endif // DIALOGIMAGESETTINGS_H

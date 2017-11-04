@@ -10,32 +10,35 @@ void Web::Ui::WindowImageEdit::_clearPolygonsAndRuler()
     polygons.clear();
     rulerPoints.clear();
     isCreateNewPolygon = true;
-    _redrawWImage();
+    redrawWImage();
 }
 
-void Web::Ui::WindowImageEdit::_redrawWImage()
+void Web::Ui::WindowImageEdit::redrawWImage()
 {
-    _myImageManagerWt->clearDrawingLayer();
+    if(_myImageManagerWt->isImageOpened())
+    {
+        _myImageManagerWt->clearDrawingLayer();
 
-    rulerDistance = _myImageManagerWt->drawRuler(
-                rulerPoints,
-                rulerColor,
-                rulerTextColor,
-                rulerThickness);
+        rulerDistance = _myImageManagerWt->drawRuler(
+                    rulerPoints,
+                    rulerColor,
+                    rulerTextColor,
+                    rulerThickness);
 
-    woundsArea = 0;
-    for(auto p: polygons)
-        woundsArea += _myImageManagerWt->drawPolygon(
-                    p,
-                    polygonEdgeColor,
-                    polygonColor,
-                    polygonTextColor,
-                    polygonEdgeThickness);
+        woundsArea = 0;
+        for(auto p: polygons)
+            woundsArea += _myImageManagerWt->drawPolygon(
+                        p,
+                        polygonEdgeColor,
+                        polygonColor,
+                        polygonTextColor,
+                        polygonEdgeThickness);
 
-    _myImageManagerWt->updateWMemoryResource();
-    _myWImage->setResource(_myImageManagerWt->myWMemoryResource);
-    _myWImage->resize(_myImageManagerWt->getZoomedWidth(),_myImageManagerWt->getZoomedHeight());
-    _myWImage->setMaximumSize(_myImageManagerWt->getZoomedWidth(),_myImageManagerWt->getZoomedHeight());
+        _myImageManagerWt->updateWMemoryResource();
+        _myWImage->setResource(_myImageManagerWt->myWMemoryResource);
+        _myWImage->resize(_myImageManagerWt->getZoomedWidth(),_myImageManagerWt->getZoomedHeight());
+        _myWImage->setMaximumSize(_myImageManagerWt->getZoomedWidth(),_myImageManagerWt->getZoomedHeight());
+    }
 }
 
 void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
@@ -173,7 +176,7 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareImageUploader()
         //_myWFileUpload->hide();
         _myImageManagerWt->openImage(_myWFileUpload->spoolFileName());
         delete _myWFileUpload;
-        _redrawWImage();
+        redrawWImage();
         _myWImage->show();
     }));
 
@@ -252,7 +255,7 @@ void Web::Ui::WindowImageEdit::_changeZoom(int value)
             *n *= 1.0 + delta / _myImageManagerWt->getZoomFactor();
 
         _myImageManagerWt->zoom(_myWSliderZoom->value());
-        _redrawWImage();
+        redrawWImage();
     }
     _myWSliderZoomText->setText(_myWSliderZoom->valueText() + "%");
 }
@@ -276,11 +279,11 @@ void Web::Ui::WindowImageEdit::_changeTransparency(int value)
 {
     // slider has automatic min/max control
     _myWSliderTransparency->setValue(value);
-    if(_myImageManagerWt->isImageOpened())
-    {
+//    if(_myImageManagerWt->isImageOpened())
+//    {
         _myImageManagerWt->setDrawingLayerTransparency(_myWSliderTransparency->value()/100.0);
-        _redrawWImage();
-    }
+        redrawWImage();
+//    }
     _myWSliderTransparencyText->setText(_myWSliderTransparency->valueText() + "%");
 }
 
@@ -380,7 +383,7 @@ void Web::Ui::WindowImageEdit::_onMouseWentDownEvent(WMouseEvent e)
                 }
                 else
                     polygons.back().push_back(crd);
-                _redrawWImage();
+                redrawWImage();
                 break;
             case RULER_MODE:
                 if(rulerPoints.size() == 0)
@@ -392,7 +395,7 @@ void Web::Ui::WindowImageEdit::_onMouseWentDownEvent(WMouseEvent e)
                     rulerPoints[0] = rulerPoints[1];
                     rulerPoints[1] = crd;
                 }
-                _redrawWImage();
+                redrawWImage();
                 break;
             case EDIT_MODE:
                 _nodeToMove = _findNodeWithPosInPolygons(crd);
@@ -421,7 +424,7 @@ void Web::Ui::WindowImageEdit::_onMouseWentDownEvent(WMouseEvent e)
                         _nodeToMove = nullptr;
                     }
                 }
-                _redrawWImage();
+                redrawWImage();
             }
         }
     }
@@ -444,7 +447,7 @@ void Web::Ui::WindowImageEdit::_onMouseDraggedEvent(WMouseEvent e)
         {
             if(_nodeToMove)
                 *_nodeToMove = {e.widget().x, e.widget().y};
-            _redrawWImage();
+            redrawWImage();
         }
     }
 }

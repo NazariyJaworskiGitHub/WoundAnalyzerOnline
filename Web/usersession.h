@@ -24,6 +24,8 @@
 #include "Web/UI/windowpatient.h"
 #include "Web/UI/windowimageedit.h"
 
+#define APPLICATION_TITLE "Wound analyser"
+
 using namespace Wt;
 
 namespace Web
@@ -42,8 +44,7 @@ class UserSession : public WApplication
                               "\t Support JavaScript: " + (env.javaScript()        ? "TRUE\n" : "FALSE\n") +
                               "\t Localization:       " + env.locale().name() + "\n");
 
-        setTitle("Test webserver");
-        //setLocale(env.locale());
+        setTitle(APPLICATION_TITLE);
         setTheme(new WBootstrapTheme());
         //setCssTheme("polished");
         //setCssTheme("");
