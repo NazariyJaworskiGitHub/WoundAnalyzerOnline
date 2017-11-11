@@ -66,7 +66,7 @@ class WindowImageEdit : public WContainerWidget
 
     WToolBar        *_myHeaderToolBar           = nullptr;
 
-    WPushButton     *_myOpenButton              = nullptr;
+    WLabel          *_myOpenButton              = nullptr; // see _onLoadPrepareImageUploader()
     WPushButton     *_mySaveButton              = nullptr;
     WPushButton     *_myExportButton            = nullptr;
 

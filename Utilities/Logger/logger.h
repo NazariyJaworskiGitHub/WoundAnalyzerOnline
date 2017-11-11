@@ -82,7 +82,7 @@ namespace Log
 //            return _instanceOfStaticLogger;}
     };
 
-    static Logger GlobalLogger("GlobalLogFile.log");
+    extern Logger GlobalLogger;
 }
 
 #endif // LOGGER_H

@@ -4,7 +4,7 @@ CONFIG += console
 #QT += core
 #QT += gui
 #QT += printsupport
-#QT += sql
+QT += sql
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -44,7 +44,8 @@ CONFIG(debug, release|debug):DEFINES += _DEBUG_MODE
 
 SOURCES += main.cpp \
     Image/imagemanager.cpp \
-    Web/UI/windowimageedit.cpp
+    Web/UI/windowimageedit.cpp \
+    DataBase/databasemanager.cpp
 
 HEADERS  += Utilities/Logger/logger.h \
     Web/webserver.h \
@@ -59,7 +60,8 @@ HEADERS  += Utilities/Logger/logger.h \
     Image/imagemanagerwt.h \
     Web/UI/windowimageedit.h \
     Web/UI/dialogprogressbar.h \
-    Web/fileupload.h \
-    Web/UI/dialogimagesettings.h
+    Web/UI/dialogimagesettings.h \
+    DataBase/databasemanager.h \
+    DataBase/databasemodel.h
 
 DISTFILES +=

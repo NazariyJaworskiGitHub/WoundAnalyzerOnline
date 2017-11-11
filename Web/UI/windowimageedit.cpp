@@ -35,7 +35,7 @@ void Web::Ui::WindowImageEdit::redrawWImage()
                         polygonEdgeThickness);
 
         char c[32];
-        std::sprintf(c,"%.2lf",woundsArea);
+        std::sprintf(c,"%.2f",woundsArea);
         _myTotalAreaLineEdit->setText(c);
 
         _myImageManagerWt->updateWMemoryResource();
@@ -49,9 +49,14 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
 {
     _myHeaderToolBar = new WToolBar(this);
 
-//    _myOpenButton = new  WPushButton("Open", this);
-//    _myOpenButton->setIcon(WLink("icons/Open.png"));
-//    _myHeaderToolBar->addButton(_myOpenButton);
+    /// I can't change input=file in html and can't bind the button,
+    /// so i have just bond the label
+    _myOpenButton = new WLabel("Open",this);
+    _myOpenButton->setImage(new WImage(WLink("icons/Open.png")));
+    _myOpenButton->setStyleClass("btn");
+    _onLoadPrepareImageUploader();
+    _myHeaderToolBar->addWidget(_myOpenButton);
+    _myHeaderToolBar->setCompact(true);
 
 //    _mySaveButton = new  WPushButton("Save", this);
 //    _mySaveButton->setIcon(WLink("icons/Save.png"));
@@ -141,7 +146,7 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareImageArea()
     _myWImage = new WImage(this);
     _myWImage->decorationStyle().setCursor(Wt::CrossCursor);
     _myWImage->setJavaScriptMember("oncontextmenu","function() {return false;}");
-    _myWTable->elementAt(2, 0)->addWidget(_myWImage);
+    _myWTable->elementAt(1, 0)->addWidget(_myWImage);
 }
 
 void Web::Ui::WindowImageEdit::_onLoadPrepareImageUploader()
@@ -174,9 +179,8 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareImageUploader()
 
     // React to a succesfull upload.
     _myWFileUpload->uploaded().connect(std::bind([=] () {
-        //_myWFileUpload->hide();
         _myImageManagerWt->openImage(_myWFileUpload->spoolFileName());
-        delete _myWFileUpload;
+        _onLoadPrepareImageUploader();
         redrawWImage();
         _myWImage->show();
         _enableUI();
@@ -190,7 +194,18 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareImageUploader()
         _onLoadPrepareImageUploader();
 
     }));
-    _myWTable->elementAt(2, 0)->addWidget(_myWFileUpload);
+    /// I can't just hide it! see https://tympanus.net/codrops/2015/09/15/styling-customizing-file-inputs-smart-way/
+    //_myWFileUpload->hide();
+    _myWFileUpload->setAttributeValue("style","width:0px;height:0px;opacity:0;visibility:hidden;overflow:hidden;position:absolute;");
+
+    /// I can't change input=file in html and can't bind the button,
+    /// so i have just bond the label
+    WPushButton *_fakeBuddy = new WPushButton(this);
+    _fakeBuddy->setAttributeValue("style","width:0px;height:0px;opacity:0;visibility:hidden;overflow:hidden;position:absolute;");
+    _myOpenButton->setBuddy(_fakeBuddy);
+    /// just can't use reinterpret_cast
+    _myOpenButton->setAttributeValue("for","in"+_myWFileUpload->id()); // override buddy
+    //delete _fakeBuddy;
 }
 
 void Web::Ui::WindowImageEdit::_onLoadPrepareFooter()
@@ -249,7 +264,7 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareFooter()
 
     _myFooterToolBar->setLayout(footerLayout);
 
-    _myWTable->elementAt(3, 0)->addWidget(_myFooterToolBar);
+    _myWTable->elementAt(2, 0)->addWidget(_myFooterToolBar);
 }
 
 void Web::Ui::WindowImageEdit::_onLoadPrepareZoomSlider()
@@ -552,11 +567,12 @@ Web::Ui::WindowImageEdit::WindowImageEdit(WContainerWidget *parent) : WContainer
 
     _myWTable = new WTable(this);
 
-    _onLoadPrepareToolbar();
-
     _onLoadPrepareImageArea();
 
-    _onLoadPrepareImageUploader();
+    _onLoadPrepareToolbar();  
+
+//    _onLoadPrepareImageUploader(); // see _onLoadPrepareToolbar();
+
     _onLoadPrepareFooter();
 
     _onLoadPrepareZoomSlider();

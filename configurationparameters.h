@@ -4,7 +4,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QRegExp>
-
+#include <iostream>
 #include "Utilities/Logger/logger.h"
 
 // Logging parameters
@@ -18,6 +18,12 @@
 #define CONFIGURATION_FILE_KEYWORD_WEBSERVERCONFIG          "WEBSERVERCONFIG"
 #define CONFIGURATION_FILE_KEYWORD_WEBSERVERACCESSLOG       "WEBSERVERACCESSLOG"
 
+// Database parameters
+#define CONFIGURATION_FILE_KEYWORD_DATABASEHOSTNAME         "DATABASEHOSTNAME"
+#define CONFIGURATION_FILE_KEYWORD_DATABASENAME             "DATABASENAME"
+#define CONFIGURATION_FILE_KEYWORD_DATABASEUSERNAME         "DATABASEUSERNAME"
+#define CONFIGURATION_FILE_KEYWORD_DATABASEUSERPASSWORD     "DATABASEUSERPASSWORD"
+
 class ConfigurationParameters
 {
 public: Log::LEVEL loggingLevel = Log::TRACE;
@@ -30,13 +36,21 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
         char* Config       = nullptr;
         char* AccessLog    = nullptr;
     } webServerParameters;
-    private: bool _checkWord(QString &line, QString &word, const char* lable, char** param)
+    public: struct DatabaseParameters
     {
-        if(word.compare(QString(lable), Qt::CaseInsensitive) == 0)
+        char* HostName     = nullptr;
+        char* DatabaseName = nullptr;
+        char* UserName     = nullptr;
+        char* UserPassword = nullptr;
+    } databaseParameters;
+
+    private: bool _checkWord(QString &line, QString &word, const char* label, char** param)
+    {
+        if(word.compare(QString(label), Qt::CaseInsensitive) == 0)
         {
             word = line.section(QRegExp("\\s+"),1,1,QString::SectionSkipEmpty);
             if(*param) delete *param;
-            *param = new char[word.length()];
+            *param = new char[word.length()+1];
             strcpy(*param, word.toStdString().data());
             return true;
         }
@@ -71,7 +85,6 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
                     _currentLine = _input.readLine();
                     // Read first word
                     _currentWord = _currentLine.section(QRegExp("\\s+"),0,0,QString::SectionSkipEmpty);
-
                     if(_currentWord.compare(QString(CONFIGURATION_FILE_KEYWORD_LOGGINGLEVEL), Qt::CaseInsensitive) == 0)
                     {
                         _currentWord = _currentLine.section(QRegExp("\\s+"),1,1,QString::SectionSkipEmpty);
@@ -96,6 +109,11 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
                     else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_WEBSERVERAPPROOT, &webServerParameters.AppRoot))continue;
                     else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_WEBSERVERCONFIG, &webServerParameters.Config))continue;
                     else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_WEBSERVERACCESSLOG, &webServerParameters.AccessLog))continue;
+
+                    else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_DATABASEHOSTNAME, &databaseParameters.HostName))continue;
+                    else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_DATABASENAME, &databaseParameters.DatabaseName))continue;
+                    else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_DATABASEUSERNAME, &databaseParameters.UserName))continue;
+                    else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_DATABASEUSERPASSWORD, &databaseParameters.UserPassword))continue;
                 }
                 _configurationFile.close();
             }
@@ -103,37 +121,62 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
         // check empty parameters
         if(webServerParameters.AccessLog == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There aren't " CONFIGURATION_FILE_KEYWORD_WEBSERVERACCESSLOG " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERACCESSLOG " parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.AppRoot == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There aren't " CONFIGURATION_FILE_KEYWORD_WEBSERVERAPPROOT " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERAPPROOT " parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.Config == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There aren't " CONFIGURATION_FILE_KEYWORD_WEBSERVERCONFIG " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERCONFIG " parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.DocRoot == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There aren't " CONFIGURATION_FILE_KEYWORD_WEBSERVERDOCROOT " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERDOCROOT " parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.HttpAddress == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There aren't " CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPADDRESS " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPADDRESS " parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.HttpPort == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There aren't " CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPPORT " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPPORT " parameter in the configuration file\n";
+            Log::GlobalLogger.msg(Log::ERROR, errMsg);
+            throw std::runtime_error(errMsg);
+        }
+        /////////////////////////////////////////////////////////////////
+        else if(databaseParameters.HostName == nullptr)
+        {
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_DATABASEHOSTNAME " parameter in the configuration file\n";
+            Log::GlobalLogger.msg(Log::ERROR, errMsg);
+            throw std::runtime_error(errMsg);
+        }
+        else if(databaseParameters.DatabaseName == nullptr)
+        {
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_DATABASENAME " parameter in the configuration file\n";
+            Log::GlobalLogger.msg(Log::ERROR, errMsg);
+            throw std::runtime_error(errMsg);
+        }
+        else if(databaseParameters.UserName == nullptr)
+        {
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_DATABASEUSERNAME " parameter in the configuration file\n";
+            Log::GlobalLogger.msg(Log::ERROR, errMsg);
+            throw std::runtime_error(errMsg);
+        }
+        else if(databaseParameters.UserPassword == nullptr)
+        {
+            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_DATABASEUSERPASSWORD " parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
@@ -148,6 +191,11 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
         if(webServerParameters.DocRoot) delete webServerParameters.DocRoot;
         if(webServerParameters.HttpAddress) delete webServerParameters.HttpAddress;
         if(webServerParameters.HttpPort) delete webServerParameters.HttpPort;
+
+        if(databaseParameters.HostName) delete databaseParameters.HostName;
+        if(databaseParameters.DatabaseName) delete databaseParameters.DatabaseName;
+        if(databaseParameters.UserName) delete databaseParameters.UserName;
+        if(databaseParameters.UserPassword) delete databaseParameters.UserPassword;
     }
 
     public : static ConfigurationParameters *instance()

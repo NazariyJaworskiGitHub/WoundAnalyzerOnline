@@ -86,7 +86,7 @@ double ImageManager::drawPolygon(
                 if(drawText)
                 {
                     char c[32];
-                    std::sprintf(c,"%.2lf",_area);
+                    std::sprintf(c,"%.2f",_area);
                     putText(
                             _myDrawingLayer,
                             c,
@@ -135,7 +135,7 @@ double ImageManager::drawRuler(
             if(drawText)
             {
                 char c[32];
-                std::sprintf(c,"%.2lf px",_distance);
+                std::sprintf(c,"%.2f px",_distance);
                 putText(
                         _myDrawingLayer,
                         c,
