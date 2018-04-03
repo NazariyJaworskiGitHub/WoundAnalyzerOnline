@@ -32,12 +32,12 @@ LIBS += -lwsock32
 QMAKE_CXXFLAGS += -Wno-unused-local-typedefs #disable a lot of boost warnings
 
 #OpenCV
-INCLUDEPATH += e:\OpenCV_2.4.13\opencv\localBuild\include
-LIBS += e:\OpenCV_2.4.13\opencv\localBuild_x32\lib\libopencv_core2413.dll.a
-LIBS += e:\OpenCV_2.4.13\opencv\localBuild_x32\lib\libopencv_highgui2413.dll.a
-LIBS += e:\OpenCV_2.4.13\opencv\localBuild_x32\lib\libopencv_imgproc2413.dll.a
-LIBS += e:\OpenCV_2.4.13\opencv\localBuild_x32\lib\libopencv_photo2413.dll.a
-LIBS += e:\OpenCV_2.4.13\opencv\localBuild_x32\lib\libopencv_video2413.dll.a
+INCLUDEPATH += e:\OpenCV\OpenCV-2.4.13\localBuild\include
+LIBS += e:\OpenCV\opencv-2.4.13\localBuild_x32\lib\libopencv_core2413.dll.a
+LIBS += e:\OpenCV\OpenCV-2.4.13\localBuild_x32\lib\libopencv_highgui2413.dll.a
+LIBS += e:\OpenCV\OpenCV-2.4.13\localBuild_x32\lib\libopencv_imgproc2413.dll.a
+LIBS += e:\OpenCV\OpenCV-2.4.13\localBuild_x32\lib\libopencv_photo2413.dll.a
+LIBS += e:\OpenCV\OpenCV-2.4.13\localBuild_x32\lib\libopencv_video2413.dll.a
 
 #For debugging
 CONFIG(debug, release|debug):DEFINES += _DEBUG_MODE
@@ -62,6 +62,7 @@ HEADERS  += Utilities/Logger/logger.h \
     Web/UI/dialogprogressbar.h \
     Web/UI/dialogimagesettings.h \
     DataBase/databasemanager.h \
-    DataBase/databasemodel.h
+    DataBase/databasemodel.h \
+    Web/UI/windowintro.h
 
 DISTFILES +=
