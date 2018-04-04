@@ -1,4 +1,5 @@
 #include "configurationparameters.h"
+#include "authmanager.h"
 #include "Utilities/Logger/logger.h"
 #include "Web/webserver.h"
 #include "DataBase/databasemanager.h"
@@ -19,6 +20,9 @@ int main(int argc, char *argv[])
     // Read configuration
     Log::GlobalLogger.msg(Log::INFO, "[Global logger] Reading configuration parameters\n");
     ConfigurationParameters::instance()->readConfigurationFile();
+
+    Log::GlobalLogger.msg(Log::INFO, "[Global logger] Reading trusted users\n");
+    AuthManager::instance()->readUsersFile();
 
     // Prepare global logger
     Log::GlobalLoggingLevel = ConfigurationParameters::instance()->loggingLevel;

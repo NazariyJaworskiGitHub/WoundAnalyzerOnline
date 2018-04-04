@@ -12,15 +12,8 @@
 #endif // BOOST_SIGNALS_NO_DEPRECATION_WARNING
 
 #include <Wt/WContainerWidget>
-#include <Wt/WNavigationBar>
-#include <Wt/WAnchor>
 #include <Wt/WImage>
 #include <Wt/WTimer>
-
-#include <Web/UI/authmanager.h>
-
-/// \todo
-#define _LINK_ "localhost:8080"
 
 using namespace Wt;
 

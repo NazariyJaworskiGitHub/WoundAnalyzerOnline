@@ -83,6 +83,7 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
                 while(!_input.atEnd())
                 {
                     _currentLine = _input.readLine();
+                    if(_currentLine[0]=='#') continue;//i.e. comment ssection
                     // Read first word
                     _currentWord = _currentLine.section(QRegExp("\\s+"),0,0,QString::SectionSkipEmpty);
                     if(_currentWord.compare(QString(CONFIGURATION_FILE_KEYWORD_LOGGINGLEVEL), Qt::CaseInsensitive) == 0)

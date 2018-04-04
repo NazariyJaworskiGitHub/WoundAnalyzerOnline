@@ -21,7 +21,7 @@
 	<debug>false</debug>
 	<log-file>WebserwerWt.log</log-file>
 	<log-config>* -debug</log-config>
-	<max-request-size>128</max-request-size>
+	<max-request-size>1024</max-request-size>
 	<session-id-length>16</session-id-length>
 	<plain-ajax-sessions-ratio-limit>1</plain-ajax-sessions-ratio-limit>
 	<ajax-puzzle>false</ajax-puzzle>

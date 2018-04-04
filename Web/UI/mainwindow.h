@@ -17,9 +17,9 @@
 #include <Wt/WImage>
 #include <Wt/WTimer>
 
+#include "Web/UI/authwidgets.h"
 #include "Web/UI/windowintro.h"
 #include "Web/UI/windowimageedit.h"
-#include "Web/UI/authmanager.h"
 
 /// \todo
 #define _LINK_ "localhost:8080"
@@ -38,7 +38,7 @@ class MainWindow : public WContainerWidget
     public : WPushButton *intoPushButton = nullptr;
     public : WindowIntro *windowIntro = nullptr;
 
-    public : AuthLoginWidget *authLoginWidget = nullptr;
+    public : WPushButton *loginPushButton = nullptr;
     public : WindowImageEdit *windowImageEdit = nullptr;
 
     public : MainWindow(WContainerWidget *parent) : WContainerWidget(parent)
@@ -54,12 +54,34 @@ class MainWindow : public WContainerWidget
         intoPushButton->setToolTip("Intro page");
         intoPushButton->clicked().connect(std::bind([=](){
             for(auto child : mainContainer->children())
+            {
+                child->hide();
                 delete child;
+            }
             windowIntro = new WindowIntro(mainContainer);
         }));
         navigationBar->addWidget(intoPushButton, AlignLeft);
-        authLoginWidget = new AuthLoginWidget(this);
-        navigationBar->addWidget(authLoginWidget->logInOutPushButton, AlignRight);
+
+        loginPushButton = new WPushButton(this);
+        loginPushButton->setIcon(WLink("icons/Log-In.png"));
+        loginPushButton->setToolTip("Log in");
+        loginPushButton->clicked().connect(std::bind([=](){
+            LogInForm *logInForm = new LogInForm(this);
+            logInForm->show();
+            logInForm->finished().connect(std::bind([=](WDialog::DialogCode code){
+                if(code == WDialog::Accepted)
+                {
+                    for(auto child : mainContainer->children())
+                    {
+                        child->hide();
+                        delete child;
+                    }
+                    windowImageEdit = new WindowImageEdit(mainContainer);
+                }
+            },std::placeholders::_1));
+        }));
+        navigationBar->addWidget(loginPushButton, AlignRight);
+
         windowIntro = new WindowIntro(mainContainer);
     }
 };
