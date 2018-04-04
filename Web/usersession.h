@@ -21,9 +21,7 @@
 
 #include "Utilities/Logger/logger.h"
 
-#include "Web/UI/windowpatient.h"
-#include "Web/UI/windowimageedit.h"
-#include "Web/UI/windowintro.h"
+#include "Web/UI/mainwindow.h"
 
 #define APPLICATION_TITLE "Wound analyser"
 
@@ -47,13 +45,8 @@ class UserSession : public WApplication
 
         setTitle(APPLICATION_TITLE);
         setTheme(new WBootstrapTheme());
-        //setCssTheme("polished");
-        //setCssTheme("");
         enableUpdates(true);
-//        Ui::WindowPatient *windowPatient = new Ui::WindowPatient(root());
-//        root()->setOverflow(WContainerWidget::OverflowHidden);
-//        Ui::WindowImageEdit *windowImageEdit = new Ui::WindowImageEdit(root());
-        Ui::WindowIntro *windowIntro = new Ui::WindowIntro(root());
+        Ui::MainWindow *mainWindow = new Ui::MainWindow(root());
     }
     public : ~UserSession(){}
 };

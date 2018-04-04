@@ -63,6 +63,8 @@ HEADERS  += Utilities/Logger/logger.h \
     Web/UI/dialogimagesettings.h \
     DataBase/databasemanager.h \
     DataBase/databasemodel.h \
-    Web/UI/windowintro.h
+    Web/UI/windowintro.h \
+    Web/UI/authmanager.h \
+    Web/UI/mainwindow.h
 
 DISTFILES +=

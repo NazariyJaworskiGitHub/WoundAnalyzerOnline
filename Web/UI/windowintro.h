@@ -17,6 +17,11 @@
 #include <Wt/WImage>
 #include <Wt/WTimer>
 
+#include <Web/UI/authmanager.h>
+
+/// \todo
+#define _LINK_ "localhost:8080"
+
 using namespace Wt;
 
 namespace Web
@@ -25,7 +30,6 @@ namespace Ui
 {
 class WindowIntro : public WContainerWidget
 {
-    public : WNavigationBar *myWNavigationBar = nullptr;
     public : std::vector<WImage*> myIntroImages;
     private: size_t _imageIndexToShow = 0;
     public : WTimer *hideIntroImageTimer = nullptr;
@@ -34,15 +38,6 @@ class WindowIntro : public WContainerWidget
     public : int introAnimationDuration = 1000;
     public : WindowIntro(WContainerWidget *parent) : WContainerWidget(parent)
     {
-        myWNavigationBar = new WNavigationBar(this);
-        myWNavigationBar->setResponsive(true);
-        myWNavigationBar->setMargin(0);
-        myWNavigationBar->addWidget(
-                    new WAnchor(
-                        "localhost:8080",
-                        new WImage(WLink("icons/MainIcon.png"),
-                        this),
-                    this));
         //intro pictures should be named "image_#.jpg"
         for(int i=1;; ++i)
         {
