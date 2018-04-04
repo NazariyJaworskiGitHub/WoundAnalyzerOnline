@@ -19,6 +19,7 @@
 
 #include "Web/UI/windowintro.h"
 #include "Web/UI/windowimageedit.h"
+#include "Web/UI/authmanager.h"
 
 /// \todo
 #define _LINK_ "localhost:8080"
@@ -31,20 +32,20 @@ namespace Ui
 {
 class MainWindow : public WContainerWidget
 {
-    public : WNavigationBar *myWNavigationBar = nullptr;
+    public : WNavigationBar *navigationBar = nullptr;
     public : WContainerWidget *mainContainer = nullptr;
 
     public : WPushButton *intoPushButton = nullptr;
     public : WindowIntro *windowIntro = nullptr;
 
-    public : WPushButton *loginPushButton = nullptr;
+    public : AuthLoginWidget *authLoginWidget = nullptr;
     public : WindowImageEdit *windowImageEdit = nullptr;
 
     public : MainWindow(WContainerWidget *parent) : WContainerWidget(parent)
     {
-        myWNavigationBar = new WNavigationBar(this);
-        myWNavigationBar->setResponsive(true);
-        myWNavigationBar->setMargin(0);
+        navigationBar = new WNavigationBar(this);
+        navigationBar->setResponsive(true);
+        navigationBar->setMargin(0);
 
         mainContainer = new WContainerWidget(this);
 
@@ -56,18 +57,9 @@ class MainWindow : public WContainerWidget
                 delete child;
             windowIntro = new WindowIntro(mainContainer);
         }));
-        myWNavigationBar->addWidget(intoPushButton, AlignLeft);
-
-        loginPushButton = new WPushButton(this);
-        loginPushButton->setIcon(WLink("icons/Log-In.png"));
-        loginPushButton->setToolTip("Log in");
-        loginPushButton->clicked().connect(std::bind([=](){
-            for(auto child : mainContainer->children())
-                delete child;
-            windowImageEdit = new WindowImageEdit(mainContainer);
-        }));
-        myWNavigationBar->addWidget(loginPushButton, AlignRight);
-
+        navigationBar->addWidget(intoPushButton, AlignLeft);
+        authLoginWidget = new AuthLoginWidget(this);
+        navigationBar->addWidget(authLoginWidget->logInOutPushButton, AlignRight);
         windowIntro = new WindowIntro(mainContainer);
     }
 };

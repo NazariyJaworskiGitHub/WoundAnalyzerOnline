@@ -12,6 +12,7 @@
 #endif // BOOST_SIGNALS_NO_DEPRECATION_WARNING
 
 #include <Wt/WContainerWidget>
+#include <Wt/WDialog>
 #include <Wt/WHBoxLayout>
 #include <Wt/WLabel>
 #include <Wt/WLineEdit>
@@ -25,36 +26,21 @@ namespace Ui
 {
 class AuthLoginWidget : public WContainerWidget
 {
-    public : WPushButton *loginPushButton = nullptr;
-    public : AuthLoginWidget(WContainerWidget *parent) : WContainerWidget(parent)
+    public: class DialogLogIn : public WDialog
     {
-        loginPushButton = new WPushButton(this);
-        loginPushButton->setIcon(WLink("icons/Log-In.png"));
-        loginPushButton->setToolTip("Log In");
-    }
+        public : WLabel *userLabel = nullptr;
+        public : WLineEdit *userLineEdit = nullptr;
+        public : WLabel *passwordLabel = nullptr;
+        public : WLineEdit *passwordLineEdit = nullptr;
+        public : WPushButton *loginPushButton = nullptr;
+        public : DialogLogIn(WContainerWidget *parent = 0);
+    };
 
-//    public : WHBoxLayout *hBoxLayout = nullptr;
-//    public : WLabel *userLabel = nullptr;
-//    public : WLineEdit *userLineEdit = nullptr;
-//    public : WLabel *passwordLabel = nullptr;
-//    public : WLineEdit *passwordLineEdit = nullptr;
-//    public : WPushButton *loginPushButton = nullptr;
-//    public : AuthLoginWidget(WContainerWidget *parent) : WContainerWidget(parent)
-//    {
-//        //hBoxLayout = new WHBoxLayout(this);
-//        userLabel = new WLabel("User:",this);
-//        userLineEdit = new WLineEdit(this);
-//        userLabel->setBuddy(userLineEdit);
-////        hBoxLayout->addWidget(userLabel);
-////        hBoxLayout->addWidget(userLineEdit);
-//        passwordLabel = new WLabel("Password:",this);
-//        passwordLineEdit = new WLineEdit(this);
-//        passwordLabel->setBuddy(passwordLineEdit);
-////        hBoxLayout->addWidget(passwordLabel);
-////        hBoxLayout->addWidget(passwordLineEdit);
-//        loginPushButton = new WPushButton("Login",this);
-////        hBoxLayout->addWidget(loginPushButton);
-//    }
+    public : WPushButton *logInOutPushButton = nullptr;
+    public : void setLogInButton();
+    public : void setLogOutButton();
+
+    public : AuthLoginWidget(WContainerWidget *parent);
 };
 }
 }
