@@ -13,13 +13,13 @@
 
 #include <Wt/WContainerWidget>
 #include <Wt/WNavigationBar>
-#include <Wt/WAnchor>
-#include <Wt/WImage>
-#include <Wt/WTimer>
+#include <Wt/WMessageBox>
 
 #include "Web/UI/authwidgets.h"
 #include "Web/UI/windowintro.h"
 #include "Web/UI/windowimageedit.h"
+
+#include "Utilities/Logger/logger.h"
 
 /// \todo
 #define _LINK_ "localhost:8080"
@@ -38,51 +38,100 @@ class MainWindow : public WContainerWidget
     public : WPushButton *intoPushButton = nullptr;
     public : WindowIntro *windowIntro = nullptr;
 
-    public : WPushButton *loginPushButton = nullptr;
+    public : WPushButton *logInOutPushButton = nullptr;
     public : WindowImageEdit *windowImageEdit = nullptr;
+    private: bool _logInOutState;
 
-    public : MainWindow(WContainerWidget *parent) : WContainerWidget(parent)
+    public : void _showIntroContent()
+    {
+        for(auto child : mainContainer->children())
+        {
+            child->hide();
+            delete child;
+        }
+        windowIntro = new WindowIntro(mainContainer);
+    }
+    public :void _showImageEditContent()
+    {
+        for(auto child : mainContainer->children())
+        {
+            child->hide();
+            delete child;
+        }
+        windowImageEdit = new WindowImageEdit(mainContainer);
+    }
+    void _showIntroPushButton()
+    {
+        intoPushButton->setIcon(WLink("icons/MainIcon.png"));
+        intoPushButton->setToolTip("Intro page");
+    }
+    void _showLogInPushButton()
+    {
+        logInOutPushButton->setIcon(WLink("icons/Log-In.png"));
+        logInOutPushButton->setToolTip("Log in");
+    }
+
+    public :void _showLogOutPushButton()
+    {
+        logInOutPushButton->setIcon(WLink("icons/Log-Out.png"));
+        logInOutPushButton->setToolTip("Log Out");
+    }
+
+    MainWindow(WContainerWidget *parent) : WContainerWidget(parent)
     {
         navigationBar = new WNavigationBar(this);
         navigationBar->setResponsive(true);
-        navigationBar->setMargin(0);
 
         mainContainer = new WContainerWidget(this);
 
         intoPushButton = new WPushButton(this);
-        intoPushButton->setIcon(WLink("icons/MainIcon.png"));
-        intoPushButton->setToolTip("Intro page");
         intoPushButton->clicked().connect(std::bind([=](){
-            for(auto child : mainContainer->children())
-            {
-                child->hide();
-                delete child;
-            }
-            windowIntro = new WindowIntro(mainContainer);
+            _showIntroContent();
         }));
+        _showIntroPushButton();
         navigationBar->addWidget(intoPushButton, AlignLeft);
 
-        loginPushButton = new WPushButton(this);
-        loginPushButton->setIcon(WLink("icons/Log-In.png"));
-        loginPushButton->setToolTip("Log in");
-        loginPushButton->clicked().connect(std::bind([=](){
-            LogInForm *logInForm = new LogInForm(this);
-            logInForm->show();
-            logInForm->finished().connect(std::bind([=](WDialog::DialogCode code){
-                if(code == WDialog::Accepted)
-                {
-                    for(auto child : mainContainer->children())
+        logInOutPushButton = new WPushButton(this);
+        logInOutPushButton->clicked().connect(std::bind([=](){
+            if(_logInOutState)
+            {
+                LogInForm *logInForm = new LogInForm(this);
+                logInForm->show();
+                logInForm->finished().connect(std::bind([=](WDialog::DialogCode code){
+                    if(code == WDialog::Accepted)
                     {
-                        child->hide();
-                        delete child;
+                        Log::GlobalLogger.msg(
+                                    Log::INFO,
+                                    "[Authentication manager] User <" +
+                                    logInForm->getUserName().toUTF8() +
+                                    "> Logged in\n");
+                        _logInOutState = false;
+                        _showLogOutPushButton();
+                        _showImageEditContent();
                     }
-                    windowImageEdit = new WindowImageEdit(mainContainer);
+                    delete logInForm;
+                },std::placeholders::_1));
+            }
+            else
+            {
+                if(WMessageBox::show(
+                            "Warning",
+                            "Do you really want to log out?",
+                            Yes | No) == Yes)
+                {
+                    _logInOutState = true;
+                    _showLogInPushButton();
+                    _showIntroContent();
                 }
-            },std::placeholders::_1));
+            }
         }));
-        navigationBar->addWidget(loginPushButton, AlignRight);
+        _logInOutState = true;
+        _showLogInPushButton();
+        navigationBar->addWidget(logInOutPushButton, AlignRight);
 
         windowIntro = new WindowIntro(mainContainer);
+
+        navigationBar->setMargin(0);
     }
 };
 }

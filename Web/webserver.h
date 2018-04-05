@@ -29,7 +29,7 @@ namespace Web
         {
             UserSession * newSession = new UserSession(env);
             Log::GlobalLogger.msg(Log::INFO, "[Webserver] New user session "
-                                  + newSession->sessionId() + "is started\n");
+                                  + newSession->sessionId() + " is started\n");
             return newSession;
         }
         public : WebServer()throw (std::exception)
