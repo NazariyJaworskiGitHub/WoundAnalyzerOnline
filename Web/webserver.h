@@ -28,8 +28,8 @@ namespace Web
         private: static WApplication *createUserSession(const WEnvironment& env)
         {
             UserSession * newSession = new UserSession(env);
-            Log::GlobalLogger.msg(Log::INFO, "[Webserver] New user session "
-                                  + newSession->sessionId() + " is started\n");
+            Log::GlobalLogger.msg(Log::INFO, "[Webserver] New user session <"
+                                  + newSession->sessionId() + "> is started\n");
             return newSession;
         }
         public : WebServer()throw (std::exception)
@@ -63,12 +63,12 @@ namespace Web
             }
             else if (_myWServer->start())
             {
-                Log::GlobalLogger.msg(Log::INFO, "[Webserver] Webserver has been started at port " +
-                                   QString::number(_myWServer->httpPort()).toStdString() + "\n");
+                Log::GlobalLogger.msg(Log::INFO, "[Webserver] Webserver is started at port <" +
+                                   QString::number(_myWServer->httpPort()).toStdString() + ">\n");
             }
             else
             {
-                std::string errMsg = "[Webserver] ERROR: Webserver hasn't been started! \n";
+                std::string errMsg = "[Webserver] ERROR: Webserver isn't started! \n";
                 Log::GlobalLogger.msg(Log::ERROR, errMsg);
                 throw std::runtime_error(errMsg);
             }
@@ -77,7 +77,7 @@ namespace Web
         public : void stopServer() throw (std::exception)
         {
            _myWServer->stop();
-           Log::GlobalLogger.msg(Log::INFO, "[Webserver] Webserver has been stoped\n");
+           Log::GlobalLogger.msg(Log::INFO, "[Webserver] Webserver is stoped\n");
         }
         public : bool isRunning() const {return _myWServer ? _myWServer->isRunning() : false;}
         public: ~WebServer()

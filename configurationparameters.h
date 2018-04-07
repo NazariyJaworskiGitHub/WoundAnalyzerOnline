@@ -61,7 +61,7 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
     {
         if(!QFile::exists(configurationFileName))
         {
-            std::string errMsg = "[Configuration parameters] ERROR: Can't find " + configurationFileName.toStdString() + "\n";
+            std::string errMsg = "[Configuration parameters] ERROR: Can't find <" + configurationFileName.toStdString() + ">\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
@@ -70,7 +70,7 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
             QFile _configurationFile(configurationFileName);
             if(!_configurationFile.open(QIODevice::ReadOnly | QIODevice::Text))
             {
-                std::string errMsg = "[Configuration parameters] ERROR: Can't open "+ configurationFileName.toStdString() + "\n";
+                std::string errMsg = "[Configuration parameters] ERROR: Can't open <"+ configurationFileName.toStdString() + ">\n";
                 Log::GlobalLogger.msg(Log::ERROR, errMsg);
                 throw std::runtime_error(errMsg);
             }
@@ -98,7 +98,7 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
                         else if(_currentWord.compare(QString("OFF"), Qt::CaseInsensitive) == 0) loggingLevel = Log::OFF;
                         else
                         {
-                            std::string errMsg = "[Configuration parameters] ERROR: " CONFIGURATION_FILE_KEYWORD_LOGGINGLEVEL " wrong parameter in the configuration file\n";
+                            std::string errMsg = "[Configuration parameters] ERROR: <" CONFIGURATION_FILE_KEYWORD_LOGGINGLEVEL "> wrong parameter in the configuration file\n";
                             Log::GlobalLogger.msg(Log::ERROR, errMsg);
                             throw std::runtime_error(errMsg);
                         }
@@ -122,62 +122,62 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
         // check empty parameters
         if(webServerParameters.AccessLog == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERACCESSLOG " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_WEBSERVERACCESSLOG "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.AppRoot == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERAPPROOT " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_WEBSERVERAPPROOT "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.Config == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERCONFIG " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_WEBSERVERCONFIG "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.DocRoot == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERDOCROOT " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_WEBSERVERDOCROOT "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.HttpAddress == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPADDRESS " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPADDRESS "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(webServerParameters.HttpPort == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPPORT " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPPORT "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         /////////////////////////////////////////////////////////////////
         else if(databaseParameters.HostName == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_DATABASEHOSTNAME " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_DATABASEHOSTNAME "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(databaseParameters.DatabaseName == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_DATABASENAME " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_DATABASENAME "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(databaseParameters.UserName == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_DATABASEUSERNAME " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_DATABASEUSERNAME "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
         else if(databaseParameters.UserPassword == nullptr)
         {
-            std::string errMsg = "[Configuration parameters] ERROR: There no " CONFIGURATION_FILE_KEYWORD_DATABASEUSERPASSWORD " parameter in the configuration file\n";
+            std::string errMsg = "[Configuration parameters] ERROR: There no <" CONFIGURATION_FILE_KEYWORD_DATABASEUSERPASSWORD "> parameter in the configuration file\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }

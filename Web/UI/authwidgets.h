@@ -32,7 +32,6 @@ namespace Ui {
         WLabel *passwordLabel = nullptr;
         WLineEdit *passwordLineEdit = nullptr;
         WPushButton *loginPushButton = nullptr;
-        public: const AuthManager::User *currentUser = nullptr;
         public: LogInForm(WContainerWidget *parent = 0) : WDialog(parent)
         {
             userNameLabel = new WLabel("Username:",this->contents());
@@ -46,11 +45,14 @@ namespace Ui {
             loginPushButton = new WPushButton("Login",this->contents());
             loginPushButton->setStyleClass("btn-primary");
             loginPushButton->setFloatSide(Side::Right);
-            loginPushButton->clicked().connect(std::bind([=](){
-                currentUser = AuthManager::instance()->checkUser(
+            loginPushButton->clicked().connect(std::bind([=]()
+            {
+                if(AuthManager::instance()->checkAndLogInUser(
                             userNameLineEdit->text().toUTF8(),
-                            passwordLineEdit->text().toUTF8());
-                if(currentUser) this->accept();
+                            passwordLineEdit->text().toUTF8()))
+                {
+                    this->accept();
+                }
                 else
                 {
                     WMessageBox::show("Warning", "Wrong username or password", Ok);
@@ -58,8 +60,8 @@ namespace Ui {
                 }
             }));
         }
-        public: WString getUserName(){return userNameLineEdit->text();}
-        public: WString getPassword(){return passwordLineEdit->text();}
+//        public: WString getUserName(){return userNameLineEdit->text();}
+//        public: WString getPassword(){return passwordLineEdit->text();}
         public: ~LogInForm(){}
     };
 

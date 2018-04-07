@@ -12,11 +12,7 @@
 #endif // BOOST_SIGNALS_NO_DEPRECATION_WARNING
 
 #include <string>
-#include <QFile>
-#include <QTextStream>
-#include <QRegExp>
-
-#include "Utilities/Logger/logger.h"
+#include <vector>
 
 // Database parameters
 #define USERS_FILE_KEYWORD_DOCTOR   "DOCTOR"
@@ -52,9 +48,10 @@ class AuthManager
             return !((username.compare(u.username)) || (password.compare(u.password)));}
     };
 
-    public : std::vector<User*> users;
-    public : void readUsersFile(const QString usersFileName = "users.cfg") throw(std::exception);
-    public : const User *checkUser(const std::string &username, const std::string &password);
+    public : std::vector<AuthManager::User*> users;
+    public : void readUsersFile(const std::string usersFileName = "users.cfg") throw(std::exception);
+    public : const AuthManager::User *checkAndLogInUser(const std::string &username, const std::string &password);
+    public : void logOutCurrentUser();
     private: AuthManager(){}
     private: ~AuthManager(){for(auto i : users) delete i;}
     public : static AuthManager *instance()

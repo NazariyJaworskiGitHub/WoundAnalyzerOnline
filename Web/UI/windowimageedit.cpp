@@ -52,24 +52,24 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
     /// I can't change input=file in html and can't bind the button,
     /// so i have just bond the label
     _myOpenButton = new WLabel("Open",this);
-    _myOpenButton->setImage(new WImage(WLink("icons/Open.png")));
+    _myOpenButton->setImage(new WImage(WLink("icons/ImageEdit/Open.png")));
     _myOpenButton->setStyleClass("btn");
     _onLoadPrepareImageUploader();
     _myHeaderToolBar->addWidget(_myOpenButton);
     _myHeaderToolBar->setCompact(true);
 
 //    _mySaveButton = new  WPushButton("Save", this);
-//    _mySaveButton->setIcon(WLink("icons/Save.png"));
+//    _mySaveButton->setIcon(WLink("icons/ImageEdit/Save.png"));
 //    _myHeaderToolBar->addButton(_mySaveButton);
 
 //    _myExportButton = new  WPushButton("Export", this);
-//    _myExportButton->setIcon(WLink("icons/Export.png"));
+//    _myExportButton->setIcon(WLink("icons/ImageEdit/Export.png"));
 //    _myHeaderToolBar->addButton(_myExportButton);
 
     _myHeaderToolBar->addSeparator();
 
     _myPolygonButton = new  WPushButton("Polygon", this);
-    _myPolygonButton->setIcon(WLink("icons/Polygon.png"));
+    _myPolygonButton->setIcon(WLink("icons/ImageEdit/Polygon.png"));
     _myPolygonButton->clicked().connect(std::bind([=] () {
         if(this->mode == POLYGON_MODE)
         {
@@ -87,7 +87,7 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
     _myHeaderToolBar->addButton(_myPolygonButton);
 
     _myRulerButton = new  WPushButton("Ruler", this);
-    _myRulerButton->setIcon(WLink("icons/Ruler.png"));
+    _myRulerButton->setIcon(WLink("icons/ImageEdit/Ruler.png"));
     _myRulerButton->clicked().connect(std::bind([=] () {
         if(this->mode == RULER_MODE)
         {
@@ -104,7 +104,7 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
     _myHeaderToolBar->addButton(_myRulerButton);
 
     _myClearButton = new  WPushButton("Clear", this);
-    _myClearButton->setIcon(WLink("icons/Clear.png"));
+    _myClearButton->setIcon(WLink("icons/ImageEdit/Clear.png"));
     _myClearButton->clicked().connect(std::bind([=] () {
         _clearPolygonsAndRuler();
     }));
@@ -113,25 +113,25 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
     _myHeaderToolBar->addSeparator();
 
     _myZoomOutButton = new  WPushButton("Zoom-Out", this);
-    _myZoomOutButton->setIcon(WLink("icons/Zoom-Out.png"));
+    _myZoomOutButton->setIcon(WLink("icons/ImageEdit/Zoom-Out.png"));
     _myHeaderToolBar->addButton(_myZoomOutButton);
 
     _myZoomInButton = new  WPushButton("Zoom-In", this);
-    _myZoomInButton->setIcon(WLink("icons/Zoom-In.png"));
+    _myZoomInButton->setIcon(WLink("icons/ImageEdit/Zoom-In.png"));
     _myHeaderToolBar->addButton(_myZoomInButton);
 
     _myTransparencyDownButton = new  WPushButton("Light-Dn", this);
-    _myTransparencyDownButton->setIcon(WLink("icons/Transparency-Down.png"));
+    _myTransparencyDownButton->setIcon(WLink("icons/ImageEdit/Transparency-Down.png"));
     _myHeaderToolBar->addButton(_myTransparencyDownButton);
 
     _myTransparencyUpButton = new  WPushButton("Light-Up", this);
-    _myTransparencyUpButton->setIcon(WLink("icons/Transparency-Up.png"));
+    _myTransparencyUpButton->setIcon(WLink("icons/ImageEdit/Transparency-Up.png"));
     _myHeaderToolBar->addButton(_myTransparencyUpButton);
 
     _myHeaderToolBar->addSeparator();
 
     _myConfigureButton = new  WPushButton("Configure", this);
-    _myConfigureButton->setIcon(WLink("icons/Configure.png"));
+    _myConfigureButton->setIcon(WLink("icons/ImageEdit/Configure.png"));
     _myConfigureButton->clicked().connect(std::bind([=] () {
         _myDialogImageSettings = new DialogImageSettings(this);
         _myDialogImageSettings->show();
@@ -190,7 +190,11 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareImageUploader()
     _myWFileUpload->fileTooLarge().connect(std::bind([=] () {
         Log::GlobalLogger.msg(Log::ERROR,"[Image upload] fileTooLarge() signal\n");
         _myProgressBarDialog->reject();
-        WMessageBox::show("", "File too large", Ok);
+        WMessageBox::show(
+                    "File too large!",
+                    "The maximum allowed size is " +
+                    std::to_string(WApplication::instance()->maximumRequestSize()) + " bytes.",
+                    Ok);
         _onLoadPrepareImageUploader();
 
     }));
@@ -214,7 +218,7 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareFooter()
 
     WVBoxLayout *footerLayout = new WVBoxLayout();
 
-    _myWSliderZoomLabel = new WLabel(new WImage(WLink("icons/ZoomSmall.png"),this),this);
+    _myWSliderZoomLabel = new WLabel(new WImage(WLink("icons/ImageEdit/ZoomSmall.png"),this),this);
     _myWSliderZoom = new WSlider(this);
     _myWSliderZoomText = new WText(std::to_string(ZOOM_INIT)+"%",this);
 
@@ -224,7 +228,7 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareFooter()
     zoomSliderLayout->addWidget(_myWSliderZoomText);
     footerLayout->addLayout(zoomSliderLayout);
 
-    _myWSliderTransparencyLabel = new WLabel(new WImage(WLink("icons/Transparency.png"),this),this);
+    _myWSliderTransparencyLabel = new WLabel(new WImage(WLink("icons/ImageEdit/Transparency.png"),this),this);
     _myWSliderTransparency = new WSlider(this);
     _myWSliderTransparencyText = new WText(std::to_string(TRANSP_INIT)+"%",this);
 

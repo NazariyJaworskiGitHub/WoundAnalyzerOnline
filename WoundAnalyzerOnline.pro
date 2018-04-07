@@ -67,6 +67,7 @@ HEADERS  += Utilities/Logger/logger.h \
     Web/UI/windowintro.h \
     Web/UI/mainwindow.h \
     authmanager.h \
-    Web/UI/authwidgets.h
+    Web/UI/authwidgets.h \
+    Web/UI/databaseview.h
 
 DISTFILES +=

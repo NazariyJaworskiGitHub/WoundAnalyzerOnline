@@ -1,19 +1,26 @@
 #include "authmanager.h"
 
-void AuthManager::readUsersFile(const QString usersFileName) throw(std::exception)
+#include <QFile>
+#include <QTextStream>
+#include <QRegExp>
+
+#include "Web/usersession.h"
+#include "Utilities/Logger/logger.h"
+
+void AuthManager::readUsersFile(const std::string usersFileName) throw(std::exception)
 {
-    if(!QFile::exists(usersFileName))
+    if(!QFile::exists(QString(usersFileName.data())))
     {
-        std::string errMsg = "[Authentication manager] ERROR: Can't find " + usersFileName.toStdString() + "\n";
+        std::string errMsg = "[Authentication manager] ERROR: Can't find " + usersFileName + "\n";
         Log::GlobalLogger.msg(Log::ERROR, errMsg);
         throw std::runtime_error(errMsg);
     }
     else
     {
-        QFile _usersFile(usersFileName);
+        QFile _usersFile(QString(usersFileName.data()));
         if(!_usersFile.open(QIODevice::ReadOnly | QIODevice::Text))
         {
-            std::string errMsg = "[Authentication manager] ERROR: Can't open "+ usersFileName.toStdString() + "\n";
+            std::string errMsg = "[Authentication manager] ERROR: Can't open "+ usersFileName + "\n";
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
@@ -66,9 +73,31 @@ void AuthManager::readUsersFile(const QString usersFileName) throw(std::exceptio
     }
 }
 
-const AuthManager::User* AuthManager::checkUser(const std::string &username, const std::string &password)
+const AuthManager::User* AuthManager::checkAndLogInUser(
+        const std::string &username,
+        const std::string &password)
 {
     for(auto i : users)
-        if(!((username.compare(i->username)) || (password.compare(i->password)))) return i;
+        if(!((username.compare(i->username)) || (password.compare(i->password))))
+        {
+            CURRENT_SESSION->currentUser = i;
+            Log::GlobalLogger.msg(
+                        Log::INFO,
+                        "[Authentication manager] User <" + username + "> is logged in\n");
+            return i;
+        }
     return nullptr;
+}
+
+void AuthManager::logOutCurrentUser()
+{
+    if(CURRENT_SESSION->currentUser)
+    {
+        Log::GlobalLogger.msg(
+                    Log::INFO,
+                    "[Authentication manager] User <" +
+                    CURRENT_SESSION->currentUser->username +
+                    "> is logged out\n");
+        CURRENT_SESSION->currentUser = nullptr;
+    }
 }

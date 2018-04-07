@@ -20,10 +20,12 @@
 #include <Wt/WEnvironment>
 
 #include "Utilities/Logger/logger.h"
-
 #include "Web/UI/mainwindow.h"
+#include "authmanager.h"
+#include "Web/UI/databaseview.h"
 
-#define APPLICATION_TITLE "Wound analyser"
+#define APPLICATION_TITLE   "Wound analyser"
+#define CURRENT_SESSION     ((Web::UserSession*)Wt::WApplication::instance())
 
 using namespace Wt;
 
@@ -31,9 +33,10 @@ namespace Web
 {
 class UserSession : public WApplication
 {
+    public : const AuthManager::User *currentUser = nullptr;
     public : UserSession(const WEnvironment &env):WApplication(env)
     {
-        Log::GlobalLogger.msg(Log::INFO, "[User session " + this->sessionId() + "] User environment parameters:\n"
+        Log::GlobalLogger.msg(Log::INFO, "[User session <" + this->sessionId() + ">] User environment parameters:\n"
                               "\t Client address:     " + env.clientAddress() + "\n"
                               "\t User agent:         " + env.userAgent() + "\n"
                               "\t Screen width:       " + QString::number(env.screenWidth()).toStdString() + "\n"
@@ -42,11 +45,11 @@ class UserSession : public WApplication
                               "\t Support WebGL:      " + (env.webGL()             ? "TRUE\n" : "FALSE\n") +
                               "\t Support JavaScript: " + (env.javaScript()        ? "TRUE\n" : "FALSE\n") +
                               "\t Localization:       " + env.locale().name() + "\n");
-
         setTitle(APPLICATION_TITLE);
         setTheme(new WBootstrapTheme());
         enableUpdates(true);
         Ui::MainWindow *mainWindow = new Ui::MainWindow(root());
+        //Ui::DatabaseView *test = new Ui::DatabaseView(root());
     }
     public : ~UserSession(){}
 };

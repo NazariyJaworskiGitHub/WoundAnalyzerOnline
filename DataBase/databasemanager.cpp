@@ -18,10 +18,10 @@ DatabaseManager::DatabaseManager(QObject *parent):
 bool DatabaseManager::connectToDatabase(
         QString hName, QString dbName, QString uName, QString password)
 {
-    Log::GlobalLogger.msg(Log::INFO,"[Database] connecting to " +
-                          dbName.toStdString() + " at " +
-                          hName.toStdString() + " with login " +
-                          uName.toStdString() + " ...\n");
+    Log::GlobalLogger.msg(Log::INFO,"[Database] connecting to <" +
+                          dbName.toStdString() + "> at <" +
+                          hName.toStdString() + "> with login <" +
+                          uName.toStdString() + "> ...\n");
 
     QSqlDatabase _db = QSqlDatabase::addDatabase(
                 "QMYSQL",DATABASENAME);

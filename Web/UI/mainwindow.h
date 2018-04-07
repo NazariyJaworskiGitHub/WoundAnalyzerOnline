@@ -62,18 +62,18 @@ class MainWindow : public WContainerWidget
     }
     void _showIntroPushButton()
     {
-        intoPushButton->setIcon(WLink("icons/MainIcon.png"));
+        intoPushButton->setIcon(WLink("icons/Navigation/MainIcon.png"));
         intoPushButton->setToolTip("Intro page");
     }
     void _showLogInPushButton()
     {
-        logInOutPushButton->setIcon(WLink("icons/Log-In.png"));
+        logInOutPushButton->setIcon(WLink("icons/Navigation/Log-In.png"));
         logInOutPushButton->setToolTip("Log in");
     }
 
     public :void _showLogOutPushButton()
     {
-        logInOutPushButton->setIcon(WLink("icons/Log-Out.png"));
+        logInOutPushButton->setIcon(WLink("icons/Navigation/Log-Out.png"));
         logInOutPushButton->setToolTip("Log Out");
     }
 
@@ -100,11 +100,6 @@ class MainWindow : public WContainerWidget
                 logInForm->finished().connect(std::bind([=](WDialog::DialogCode code){
                     if(code == WDialog::Accepted)
                     {
-                        Log::GlobalLogger.msg(
-                                    Log::INFO,
-                                    "[Authentication manager] User <" +
-                                    logInForm->getUserName().toUTF8() +
-                                    "> Logged in\n");
                         _logInOutState = false;
                         _showLogOutPushButton();
                         _showImageEditContent();
@@ -120,6 +115,7 @@ class MainWindow : public WContainerWidget
                             Yes | No) == Yes)
                 {
                     _logInOutState = true;
+                    AuthManager::instance()->logOutCurrentUser();
                     _showLogInPushButton();
                     _showIntroContent();
                 }
@@ -131,7 +127,7 @@ class MainWindow : public WContainerWidget
 
         windowIntro = new WindowIntro(mainContainer);
 
-        navigationBar->setMargin(0);
+        navigationBar->setMargin(0,Bottom);
     }
 };
 }
