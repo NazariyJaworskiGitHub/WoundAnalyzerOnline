@@ -21,8 +21,7 @@
 
 #include "Utilities/Logger/logger.h"
 
-/// \todo
-#define _LINK_ "localhost:8080"
+#include "DataBase/databasemanagerwt.h"
 
 using namespace Wt;
 
@@ -102,7 +101,15 @@ class MainWindow : public WContainerWidget
                     {
                         _logInOutState = false;
                         _showLogOutPushButton();
-                        _showImageEditContent();
+//                        _showImageEditContent();
+/////////////////////////////////////////////////////////////////////////////////////////
+                        for(auto child : mainContainer->children())
+                        {
+                            child->hide();
+                            delete child;
+                        }
+                        DatabaseManagerWt::instance()->prepareDatabaseModel(this);
+/////////////////////////////////////////////////////////////////////////////////////////
                     }
                     delete logInForm;
                 },std::placeholders::_1));

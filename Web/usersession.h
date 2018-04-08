@@ -20,9 +20,8 @@
 #include <Wt/WEnvironment>
 
 #include "Utilities/Logger/logger.h"
-#include "Web/UI/mainwindow.h"
 #include "authmanager.h"
-#include "Web/UI/databaseview.h"
+#include "Web/UI/mainwindow.h"
 
 #define APPLICATION_TITLE   "Wound analyser"
 #define CURRENT_SESSION     ((Web::UserSession*)Wt::WApplication::instance())
@@ -49,7 +48,6 @@ class UserSession : public WApplication
         setTheme(new WBootstrapTheme());
         enableUpdates(true);
         Ui::MainWindow *mainWindow = new Ui::MainWindow(root());
-        //Ui::DatabaseView *test = new Ui::DatabaseView(root());
     }
     public : ~UserSession(){}
 };

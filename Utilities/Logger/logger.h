@@ -26,7 +26,7 @@ namespace Log
         {
             _logFileStream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
             _logFileStream.open(logFileName);
-            *this << "<INFO > [Global logger] Logging is started.\n";
+            *this << "<INFO > [Global logger] Logging is started\n";
         }
         private : void operator << (const std::string &msg) noexcept
         {
@@ -73,7 +73,7 @@ namespace Log
         }
         public : ~Logger()
         {
-            *this << "<INFO > [Global logger] Logging is finished.\n";
+            *this << "<INFO > [Global logger] Logging is finished\n";
             _logFileStream.flush();
             _logFileStream.close();
         }

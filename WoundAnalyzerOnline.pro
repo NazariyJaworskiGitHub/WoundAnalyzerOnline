@@ -46,7 +46,8 @@ SOURCES += main.cpp \
     Image/imagemanager.cpp \
     Web/UI/windowimageedit.cpp \
     DataBase/databasemanager.cpp \
-    authmanager.cpp
+    authmanager.cpp \
+    DataBase/databasemanagerwt.cpp
 
 HEADERS  += Utilities/Logger/logger.h \
     Web/webserver.h \
@@ -68,6 +69,6 @@ HEADERS  += Utilities/Logger/logger.h \
     Web/UI/mainwindow.h \
     authmanager.h \
     Web/UI/authwidgets.h \
-    Web/UI/databaseview.h
+    DataBase/databasemanagerwt.h
 
 DISTFILES +=
