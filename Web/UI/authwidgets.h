@@ -32,36 +32,48 @@ namespace Ui {
         WLabel *passwordLabel = nullptr;
         WLineEdit *passwordLineEdit = nullptr;
         WPushButton *loginPushButton = nullptr;
+        public: void onLogin()
+        {
+            if(AuthManager::instance()->checkAndLogInUser(
+                        userNameLineEdit->text().toUTF8(),
+                        passwordLineEdit->text().toUTF8()))
+            {
+                this->accept();
+            }
+            else
+            {
+                WMessageBox::show("Warning", "Wrong username or password", Ok);
+                //this->reject();
+            }
+        }
         public: LogInForm(WContainerWidget *parent = 0) : WDialog(parent)
         {
+            this->rejectWhenEscapePressed(true);
+            this->setTitleBarEnabled(false);
+            this->setClosable(true);
+
             userNameLabel = new WLabel("Username:",this->contents());
             userNameLineEdit = new WLineEdit(this->contents());
             userNameLabel->setBuddy(userNameLineEdit);
+
             passwordLabel = new WLabel("Password:",this->contents());
             passwordLineEdit = new WLineEdit(this->contents());
             passwordLineEdit->setEchoMode(WLineEdit::Password);
             passwordLabel->setBuddy(passwordLineEdit);
+
             this->contents()->addWidget(new WBreak());
+
             loginPushButton = new WPushButton("Login",this->contents());
             loginPushButton->setStyleClass("btn-primary");
             loginPushButton->setFloatSide(Side::Right);
-            loginPushButton->clicked().connect(std::bind([=]()
-            {
-                if(AuthManager::instance()->checkAndLogInUser(
-                            userNameLineEdit->text().toUTF8(),
-                            passwordLineEdit->text().toUTF8()))
-                {
-                    this->accept();
-                }
-                else
-                {
-                    WMessageBox::show("Warning", "Wrong username or password", Ok);
-                    this->reject();
-                }
-            }));
+
+            loginPushButton->clicked().connect(this, &LogInForm::onLogin);
+            this->enterPressed().connect(this, &LogInForm::onLogin);
+            userNameLineEdit->enterPressed().connect(this, &LogInForm::onLogin);
+            passwordLineEdit->enterPressed().connect(this, &LogInForm::onLogin);
         }
-//        public: WString getUserName(){return userNameLineEdit->text();}
-//        public: WString getPassword(){return passwordLineEdit->text();}
+        public: std::string getUserName(){return userNameLineEdit->text().toUTF8();}
+        public: std::string getPassword(){return passwordLineEdit->text().toUTF8();}
         public: ~LogInForm(){}
     };
 

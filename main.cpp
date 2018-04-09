@@ -29,16 +29,7 @@ int main(int argc, char *argv[])
     AuthManager::instance()->readUsersFile();
 
     // Connect to database
-    if(!DatabaseManagerWt::instance()->connectToDatabase(
-                ConfigurationParameters::instance()->databaseParameters.HostName,
-                ConfigurationParameters::instance()->databaseParameters.DatabaseName,
-                ConfigurationParameters::instance()->databaseParameters.UserName,
-                ConfigurationParameters::instance()->databaseParameters.UserPassword))
-    {
-        std::string errMsg = "[Database] Can't connect to database. The program should be terminated.\n";
-        Log::GlobalLogger.msg(Log::ERROR, errMsg);
-        throw std::runtime_error(errMsg);
-    }
+    DatabaseManagerWt::instance()->connectToDatabase();
 
     // Start webserver
     Web::WebServer server;

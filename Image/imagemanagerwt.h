@@ -2,8 +2,11 @@
 #define IMAGEMANAGERWT
 
 #include "Image/imagemanager.h"
-#include "Wt/WMemoryResource"
-#include "Wt/WLength"
+
+#include <Wt/WMemoryResource>
+#include <Wt/WLength>
+
+#include "configurationparameters.h"
 
 using namespace Wt;
 
@@ -14,10 +17,10 @@ class ImageManagerWt : public WObject, public ImageManager
     public : void updateWMemoryResource()
     {
         imageDecodedData.clear();
-        vector<int>param = vector<int>(2);
+        vector<int> param = vector<int>(2);
         param[0] = CV_IMWRITE_JPEG_QUALITY;
-        param[1] = 95;
-        imencode(".jpg", _blendLayers(), imageDecodedData, param);
+        param[1] = ConfigurationParameters::instance()->jpegQuality;
+        imencode(".jpg", getBlendedLayers(), imageDecodedData, param);
         myWMemoryResource->setData(imageDecodedData);
     }
     public : WLength getWidth() const {return WLength(_myImage.cols);}

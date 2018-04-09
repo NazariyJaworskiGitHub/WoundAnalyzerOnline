@@ -152,7 +152,7 @@ double ImageManager::drawRuler(
     return _distance;
 }
 
-Mat ImageManager::_blendLayers() const
+Mat ImageManager::getBlendedLayers() const
 {
     Mat _result;
     cv::resize(_myImage,_result,cv::Size(),_zoomFactor,_zoomFactor);
@@ -200,7 +200,7 @@ void ImageManager::saveImage(const string &fileName) const
 {
     Log::GlobalLogger.msg(Log::TRACE, "[Image] saving " + fileName + "\n");
 
-    bool _result = imwrite(fileName,_blendLayers());
+    bool _result = imwrite(fileName,getBlendedLayers());
 
     if(_result)
         Log::GlobalLogger.msg(Log::TRACE, "[Image] image is saved\n");

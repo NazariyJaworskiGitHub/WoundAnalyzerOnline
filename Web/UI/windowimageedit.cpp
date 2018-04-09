@@ -143,9 +143,13 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
 
 void Web::Ui::WindowImageEdit::_onLoadPrepareImageArea()
 {
+//    WContainerWidget *_w = new WContainerWidget(this);
     _myWImage = new WImage(this);
     _myWImage->decorationStyle().setCursor(Wt::CrossCursor);
     _myWImage->setJavaScriptMember("oncontextmenu","function() {return false;}");
+//    _w->setAttributeValue("position","relative");
+//    _w->setAttributeValue("max-height","400px;");
+//    _w->setAttributeValue("overflow", "auto");
     _myWTable->elementAt(1, 0)->addWidget(_myWImage);
 }
 

@@ -56,12 +56,12 @@ class ImageManagerQt : public QObject, public ImageManager
 
     public : const QPixmap getImageAsQPixmap() const
     {
-        return QPixmap::fromImage(Mat2QImage(_blendLayers()));
+        return QPixmap::fromImage(Mat2QImage(getBlendedLayers()));
     }
 
     public : const QImage getImageAsQImage() const
     {
-        return Mat2QImage(_blendLayers());
+        return Mat2QImage(getBlendedLayers());
     }
 
     public : ImageManagerQt(QObject *parent):

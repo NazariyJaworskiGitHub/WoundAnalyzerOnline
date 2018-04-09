@@ -25,6 +25,9 @@ class ImageManager
     protected: Mat _myImage;
     protected: Mat _myDrawingLayer;
 
+    public : const Mat& getImage() const {return _myImage;}
+    public : const Mat& getDrawingLayer() const {return _myDrawingLayer;}
+
     private: bool _isImageOpened = false;
     public : bool isImageOpened() const noexcept {return _isImageOpened;}
     private: double _drawingLayerTransparency = TRANSP_INIT / 100.0;
@@ -68,7 +71,7 @@ class ImageManager
             int thickness,
             bool drawText = true);
 
-    protected: Mat _blendLayers() const;
+    public : Mat getBlendedLayers() const;
 
     protected: void _onLoadImageCleanup();
 

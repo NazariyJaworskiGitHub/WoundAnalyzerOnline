@@ -47,7 +47,8 @@ SOURCES += main.cpp \
     Web/UI/windowimageedit.cpp \
     DataBase/databasemanager.cpp \
     authmanager.cpp \
-    DataBase/databasemanagerwt.cpp
+    DataBase/databasemanagerwt.cpp \
+    DataBase/databasemodel.cpp
 
 HEADERS  += Utilities/Logger/logger.h \
     Web/webserver.h \

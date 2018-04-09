@@ -22,6 +22,7 @@
 #include "Utilities/Logger/logger.h"
 #include "authmanager.h"
 #include "Web/UI/mainwindow.h"
+#include "DataBase/databasemodel.h"
 
 #define APPLICATION_TITLE   "Wound analyser"
 #define CURRENT_SESSION     ((Web::UserSession*)Wt::WApplication::instance())
@@ -33,8 +34,13 @@ namespace Web
 class UserSession : public WApplication
 {
     public : const AuthManager::User *currentUser = nullptr;
+    public : Ui::DatabaseModel *currentDatabaseModel = nullptr;
+    public : int userScreenWidth;
+    public : int userScreenHeight;
     public : UserSession(const WEnvironment &env):WApplication(env)
     {
+        userScreenWidth = env.screenWidth();
+        userScreenHeight = env.screenHeight();
         Log::GlobalLogger.msg(Log::INFO, "[User session <" + this->sessionId() + ">] User environment parameters:\n"
                               "\t Client address:     " + env.clientAddress() + "\n"
                               "\t User agent:         " + env.userAgent() + "\n"

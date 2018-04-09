@@ -24,9 +24,13 @@
 #define CONFIGURATION_FILE_KEYWORD_DATABASEUSERNAME         "DATABASEUSERNAME"
 #define CONFIGURATION_FILE_KEYWORD_DATABASEUSERPASSWORD     "DATABASEUSERPASSWORD"
 
+//JPEG quality parameter
+#define CONFIGURATION_FILE_KEYWORD_JPEGQUALITY              "JPEGQUALITY"
+
 class ConfigurationParameters
 {
-public: Log::LEVEL loggingLevel = Log::TRACE;
+    public: int jpegQuality = 95;
+    public: Log::LEVEL loggingLevel = Log::TRACE;
     public: struct WebServerParameters
     {
         char* DocRoot      = nullptr;
@@ -102,7 +106,6 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
                             Log::GlobalLogger.msg(Log::ERROR, errMsg);
                             throw std::runtime_error(errMsg);
                         }
-                        continue;
                     }
                     else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_WEBSERVERDOCROOT, &webServerParameters.DocRoot))continue;
                     else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_WEBSERVERHTTPADDRESS, &webServerParameters.HttpAddress))continue;
@@ -115,6 +118,19 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
                     else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_DATABASENAME, &databaseParameters.DatabaseName))continue;
                     else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_DATABASEUSERNAME, &databaseParameters.UserName))continue;
                     else if(_checkWord(_currentLine, _currentWord, CONFIGURATION_FILE_KEYWORD_DATABASEUSERPASSWORD, &databaseParameters.UserPassword))continue;
+
+                    else if(_currentWord.compare(QString(CONFIGURATION_FILE_KEYWORD_JPEGQUALITY), Qt::CaseInsensitive) == 0)
+                    {
+                        _currentWord = _currentLine.section(QRegExp("\\s+"),1,1,QString::SectionSkipEmpty);
+                        bool ok;
+                        jpegQuality = _currentWord.toInt(&ok);
+                        if(!ok)
+                        {
+                            std::string errMsg = "[Configuration parameters] ERROR: <" CONFIGURATION_FILE_KEYWORD_JPEGQUALITY "> wrong parameter in the configuration file\n";
+                            Log::GlobalLogger.msg(Log::ERROR, errMsg);
+                            throw std::runtime_error(errMsg);
+                        }
+                    }
                 }
                 _configurationFile.close();
             }
@@ -181,6 +197,7 @@ public: Log::LEVEL loggingLevel = Log::TRACE;
             Log::GlobalLogger.msg(Log::ERROR, errMsg);
             throw std::runtime_error(errMsg);
         }
+        //////////////////////////////////////////////////////////////////////
     }
 
     private: ConfigurationParameters(){}

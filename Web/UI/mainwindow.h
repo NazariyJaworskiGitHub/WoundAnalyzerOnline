@@ -101,13 +101,13 @@ class MainWindow : public WContainerWidget
                     {
                         _logInOutState = false;
                         _showLogOutPushButton();
-//                        _showImageEditContent();
+                        _showImageEditContent();
 /////////////////////////////////////////////////////////////////////////////////////////
-                        for(auto child : mainContainer->children())
-                        {
-                            child->hide();
-                            delete child;
-                        }
+//                        for(auto child : mainContainer->children())
+//                        {
+//                            child->hide();
+//                            delete child;
+//                        }
                         DatabaseManagerWt::instance()->prepareDatabaseModel(this);
 /////////////////////////////////////////////////////////////////////////////////////////
                     }

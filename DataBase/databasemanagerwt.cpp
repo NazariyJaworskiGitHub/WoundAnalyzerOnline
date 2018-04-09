@@ -7,6 +7,21 @@
 
 #include "Web/usersession.h"
 #include "Utilities/Logger/logger.h"
+#include "configurationparameters.h"
+
+bool DatabaseManagerWt::connectToDatabase() throw (std::exception)
+{
+    if(!DatabaseManager::connectToDatabase(
+                ConfigurationParameters::instance()->databaseParameters.HostName,
+                ConfigurationParameters::instance()->databaseParameters.DatabaseName,
+                ConfigurationParameters::instance()->databaseParameters.UserName,
+                ConfigurationParameters::instance()->databaseParameters.UserPassword))
+    {
+        std::string errMsg = "[Database] Can't connect to database. The program should be terminated.\n";
+        Log::GlobalLogger.msg(Log::ERROR, errMsg);
+        throw std::runtime_error(errMsg);
+    }
+}
 
 DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
 {
@@ -120,6 +135,9 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
         }
     }
     ///////////////////////////////////////////////////////////////////////////////////////
+    if(CURRENT_SESSION->currentDatabaseModel) delete
+        CURRENT_SESSION->currentDatabaseModel;
+    CURRENT_SESSION->currentDatabaseModel = DBmodel;
     return DBmodel;
 }
 
@@ -222,118 +240,119 @@ bool DatabaseManagerWt::update(DatabaseModel::Survey *target)
     return true;
 }
 
-//Patient * DatabaseManagerWt::add(Doctor *parent)
-//{
-//    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-//    Log::StaticLogger::instance() << "[Database] adding new patient to doctor " + parent->name.toStdString() + "\n";
-//    Patient *newTarget = new Patient(DBmodel->patientIcon,"New patient", -1, "");
-//    query.prepare(
-//                "INSERT INTO Patients (DoctorID, PatientName)"
-//                "VALUES ('" + QString::number(parent->id) + "','New patient');");
-//    if(query.exec())
-//        Log::StaticLogger::instance() << "[Database] new patient is added \n";
-//    else
-//    {
-//        Log::StaticLogger::instance() << "[Database] Error: " + query.lastError().text().toStdString() + "\n";
-//        return nullptr;
-//    }
-//    newTarget->id = query.lastInsertId().toInt();
-//    parent->appendRow(newTarget);
-//    return newTarget;
-//}
+DatabaseModel::Patient * DatabaseManagerWt::add(DatabaseModel::Doctor *parent)
+{
+    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
+    Log::GlobalLogger.msg(Log::INFO, "[Database] adding new patient to doctor <" + parent->name + ">\n");
+    DatabaseModel::Patient *newTarget = new DatabaseModel::Patient(-1,"New patient","");
+    query.prepare(
+                "INSERT INTO Patients (DoctorID, PatientName)"
+                "VALUES ('" + QString::number(parent->id) + "','New patient');");
+    if(query.exec())
+        Log::GlobalLogger.msg(Log::INFO, "[Database] new patient is added \n");
+    else
+    {
+        Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
+        return nullptr;
+    }
+    newTarget->id = query.lastInsertId().toInt();
+    parent->addChildNode(newTarget);
+    return newTarget;
+}
 
-//Wound *DatabaseManagerWt::add(Patient *parent)
-//{
-//    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-//    Log::StaticLogger::instance() << "[Database] adding new wound to patient " + parent->name.toStdString() + "\n";
-//    Wound *newTarget = new Wound(DBmodel->woundIcon,"New wound", -1, "");
-//    query.prepare(
-//                "INSERT INTO Wounds (PatientID, WoundName)"
-//                "VALUES ('" + QString::number(parent->id) + "','New wound');");
-//    if(query.exec())
-//        Log::StaticLogger::instance() << "[Database] new wound is added \n";
-//    else
-//    {
-//        Log::StaticLogger::instance() << "[Database] Error: " + query.lastError().text().toStdString() + "\n";
-//        return nullptr;
-//    }
-//    newTarget->id = query.lastInsertId().toInt();
-//    parent->appendRow(newTarget);
-//    return newTarget;
-//}
+DatabaseModel::Wound *DatabaseManagerWt::add(DatabaseModel::Patient *parent)
+{
+    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
+    Log::GlobalLogger.msg(Log::INFO, "[Database] adding new wound to patient <" + parent->name + ">\n");
+    DatabaseModel::Wound *newTarget = new DatabaseModel::Wound(-1, "New wound", "");
+    query.prepare(
+                "INSERT INTO Wounds (PatientID, WoundName)"
+                "VALUES ('" + QString::number(parent->id) + "','New wound');");
+    if(query.exec())
+        Log::GlobalLogger.msg(Log::INFO, "[Database] new wound is added \n");
+    else
+    {
+        Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
+        return nullptr;
+    }
+    newTarget->id = query.lastInsertId().toInt();
+    parent->addChildNode(newTarget);
+    return newTarget;
+}
 
-//Survey *DatabaseManagerWt::add(Wound *parent)
-//{
-//    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-//    Log::StaticLogger::instance() << "[Database] adding new survey to wound " + parent->name.toStdString() + "\n";
-//    Survey *newTarget = new Survey(DBmodel->surveyIcon, QDateTime::currentDateTime(), -1, "", 0);
-//    newTarget->image = ImageManager::instance()->getImage().clone();
-//    query.prepare(
-//                "INSERT INTO Surveys (WoundID, SurveyDate, Image)"
-//                "VALUES ('" + QString::number(parent->id) + "','" +
-//                newTarget->date.toString("yyyy-MM-dd hh:mm:ss") + "',:imageData);");
-//    std::vector<unsigned char> v;
-//    cv::imencode(".jpg", newTarget->image.clone(), v);
-//    query.bindValue(":imageData", QByteArray(reinterpret_cast<const char*>(v.data()),v.size()));
-//    if(query.exec())
-//        Log::StaticLogger::instance() << "[Database] new survey is added \n";
-//    else
-//    {
-//        Log::StaticLogger::instance() << "[Database] Error: " + query.lastError().text().toStdString() + "\n";
-//        return nullptr;
-//    }
-//    newTarget->id = query.lastInsertId().toInt();
-//    parent->appendRow(newTarget);
-//    return newTarget;
-//}
+DatabaseModel::Survey *DatabaseManagerWt::add(DatabaseModel::Wound *parent, const cv::Mat &image)
+{
+    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
+    Log::GlobalLogger.msg(Log::INFO, "[Database] adding new survey to wound <" + parent->name + ">\n");
+    DatabaseModel::Survey *newTarget = new DatabaseModel::Survey(
+                -1, QDateTime::currentDateTime(), "", -1);
+    newTarget->image = image.clone();
+    query.prepare(
+                "INSERT INTO Surveys (WoundID, SurveyDate, Image)"
+                "VALUES ('" + QString::number(parent->id) + "','" +
+                newTarget->date.toString("yyyy-MM-dd hh:mm:ss") + "',:imageData);");
+    std::vector<unsigned char> v;
+    cv::imencode(".jpg", newTarget->image.clone(), v);
+    query.bindValue(":imageData", QByteArray(reinterpret_cast<const char*>(v.data()),v.size()));
+    if(query.exec())
+        Log::GlobalLogger.msg(Log::INFO, "[Database] new survey is added \n");
+    else
+    {
+        Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
+        return nullptr;
+    }
+    newTarget->id = query.lastInsertId().toInt();
+    parent->addChildNode(newTarget);
+    return newTarget;
+}
 
-//Wound *DatabaseManagerWt::del(Survey *target)
-//{
-//    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-//    Log::StaticLogger::instance() << "[Database] deleting survey " + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + "\n";
-//    query.prepare( "DELETE FROM Surveys WHERE ID = " + QString::number(target->id));
-//    if(query.exec())
-//        Log::StaticLogger::instance() << "[Database] survey is deleted \n";
-//    else
-//    {
-//        Log::StaticLogger::instance() << "[Database] Error: " + query.lastError().text().toStdString() + "\n";
-//        return nullptr;
-//    }
-//    Wound *parent = static_cast<Wound*>(target->parent());
-//    parent->removeRow(target->row());
-//    return parent;
-//}
+DatabaseModel::Wound *DatabaseManagerWt::del(DatabaseModel::Survey *target)
+{
+    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
+    Log::GlobalLogger.msg(Log::INFO, "[Database] deleting survey <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
+    query.prepare( "DELETE FROM Surveys WHERE ID = " + QString::number(target->id));
+    if(query.exec())
+        Log::GlobalLogger.msg(Log::INFO, "[Database] survey is deleted \n");
+    else
+    {
+        Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
+        return nullptr;
+    }
+    DatabaseModel::Wound *parent = static_cast<DatabaseModel::Wound*>(target->parentNode());
+    parent->removeChildNode(target);
+    return parent;
+}
 
-//Patient *DatabaseManagerWt::del(Wound *target)
-//{
-//    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-//    Log::StaticLogger::instance() << "[Database] deleting wound " + target->name.toStdString() + "\n";
-//    query.prepare( "DELETE FROM Wounds WHERE ID = " + QString::number(target->id));
-//    if(query.exec())
-//        Log::StaticLogger::instance() << "[Database] wound is deleted \n";
-//    else
-//    {
-//        Log::StaticLogger::instance() << "[Database] Error: " + query.lastError().text().toStdString() + "\n";
-//        return nullptr;
-//    }
-//    Patient *parent = static_cast<Patient*>(target->parent());
-//    parent->removeRow(target->row());
-//    return parent;
-//}
+DatabaseModel::Patient *DatabaseManagerWt::del(DatabaseModel::Wound *target)
+{
+    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
+    Log::GlobalLogger.msg(Log::INFO, "[Database] deleting wound <" + target->name + ">\n");
+    query.prepare( "DELETE FROM Wounds WHERE ID = " + QString::number(target->id));
+    if(query.exec())
+        Log::GlobalLogger.msg(Log::INFO, "[Database] wound is deleted \n");
+    else
+    {
+        Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
+        return nullptr;
+    }
+    DatabaseModel::Patient *parent = static_cast<DatabaseModel::Patient*>(target->parentNode());
+    parent->removeChildNode(target);
+    return parent;
+}
 
-//Doctor *DatabaseManagerWt::del(Patient *target)
-//{
-//    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-//    Log::StaticLogger::instance() << "[Database] deleting patient " + target->name.toStdString() + "\n";
-//    query.prepare( "DELETE FROM Patients WHERE ID = " + QString::number(target->id));
-//    if(query.exec())
-//        Log::StaticLogger::instance() << "[Database] patient is deleted \n";
-//    else
-//    {
-//        Log::StaticLogger::instance() << "[Database] Error: " + query.lastError().text().toStdString() + "\n";
-//        return nullptr;
-//    }
-//    Doctor *parent = static_cast<Doctor*>(target->parent());
-//    parent->removeRow(target->row());
-//    return parent;
-//}
+DatabaseModel::Doctor *DatabaseManagerWt::del(DatabaseModel::Patient *target)
+{
+    QSqlQuery query(QSqlDatabase::database(DATABASENAME));
+    Log::GlobalLogger.msg(Log::INFO, "[Database] deleting patient " + target->name + "\n");
+    query.prepare( "DELETE FROM Patients WHERE ID = " + QString::number(target->id));
+    if(query.exec())
+        Log::GlobalLogger.msg(Log::INFO, "[Database] patient is deleted \n");
+    else
+    {
+        Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
+        return nullptr;
+    }
+    DatabaseModel::Doctor *parent = static_cast<DatabaseModel::Doctor*>(target->parentNode());
+    parent->removeChildNode(target);
+    return parent;
+}

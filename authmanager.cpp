@@ -99,5 +99,8 @@ void AuthManager::logOutCurrentUser()
                     CURRENT_SESSION->currentUser->username +
                     "> is logged out\n");
         CURRENT_SESSION->currentUser = nullptr;
+        if(CURRENT_SESSION->currentDatabaseModel) delete
+            CURRENT_SESSION->currentDatabaseModel;
+        CURRENT_SESSION->currentDatabaseModel = nullptr;
     }
 }

@@ -12,9 +12,10 @@
 #endif // BOOST_SIGNALS_NO_DEPRECATION_WARNING
 
 #include <Wt/WContainerWidget>
-#include <Wt/WIconPair>
 #include <Wt/WTree>
 #include <Wt/WTreeNode>
+#include <Wt/WIconPair>
+#include <Wt/WHBoxLayout>
 
 #include <QDateTime>
 #include <QByteArray>
@@ -50,127 +51,15 @@ class DatabaseModel : public WContainerWidget
                 const std::string &notes,
                 const double woundArea,
                 WContainerWidget *parent = 0,
-                const std::string &iconPath = "icons/DatabaseView/Survey.png"):
-            WTreeNode(
-                date.toString("dd.MM.yyyy hh:mm").toStdString() + " " +
-                ((woundArea != 0) ? (QString::number(woundArea,'f',2).toStdString() + "sm<sup>2</sup>") : ("")),
-                new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
-            id(ID),
-            date(date),
-            notes(notes),
-            woundArea(woundArea){}
-        public : QByteArray packPolygons() const
-        {
-            QByteArray arr;
-            char intSize = sizeof(int);
-            arr.append(&intSize, 1);                            // size of int
-            char doubleSize = sizeof(double);
-            arr.append(&doubleSize, 1);                         // size of double
-            int count = polygons.size();
-            arr.append((char*)&count, sizeof(int));             // number of polygons <int>
-            for(PolygonF p: polygons)
-            {
-                int countP = p.size();
-                arr.append((char*)&countP, sizeof(int));        // number of nodes in polygons <int>
-            }
-            for(PolygonF p: polygons)
-                for(Point2d n: p)
-                {
-                    arr.append((char*)&n.x, sizeof(double));    // nodes of polygons <double>
-                    arr.append((char*)&n.y, sizeof(double));
-                }
-            return arr;
-        }
-        public : void unpackPolygons(QByteArray buf)
-        {
-            for(auto p = polygons.begin(); p!= polygons.end(); ++p)
-                p->clear();
-            polygons.clear();
-            if(!buf.isEmpty())
-            {
-                char * ptr = buf.data();
-                size_t intSize = *ptr;
-                ptr += sizeof(char);
-                size_t doubleSize = *ptr;
-                ptr += sizeof(char);
-                int polygonsCount = *(int*)(ptr);
-                ptr += intSize;
-                polygons.resize(polygonsCount);
-                for(auto p = polygons.begin(); p!= polygons.end(); ++p)
-                {
-                    int nodesCount = *(int*)(ptr);
-                    ptr += intSize;
-                    p->resize(nodesCount);
-                }
-                for(auto p = polygons.begin(); p!= polygons.end(); ++p)
-                    for(auto n = p->begin(); n!= p->end(); ++n)
-                    {
-                        n->x = *(double*)(ptr);
-                        ptr += doubleSize;
-                        n->y = *(double*)(ptr);
-                        ptr += doubleSize;
-                    }
-            }
-        }
-        public : QByteArray packRulerPoints() const
-        {
-            QByteArray arr;
-            char intSize = sizeof(int);
-            arr.append(&intSize, 1);                            // size of int
-            char doubleSize = sizeof(double);
-            arr.append(&doubleSize, 1);                         // size of double
-            int count = rulerPoints.size();
-            arr.append((char*)&count, sizeof(int));             // number of nodes <int>
-            for(auto n: rulerPoints)
-            {
-                arr.append((char*)&n.x, sizeof(double));        // nodes of polygon <double>
-                arr.append((char*)&n.y, sizeof(double));
-            }
-            return arr;
-        }
-        public : void unpackRulerPoints(QByteArray buf)
-        {
-            rulerPoints.clear();
-            if(!buf.isEmpty())
-            {
-                char * ptr = buf.data();
-                size_t intSize = *ptr;
-                ptr += sizeof(char);
-                size_t doubleSize = *ptr;
-                ptr += sizeof(char);
-                int nodesCount = *(int*)(ptr);
-                ptr += intSize;
-                rulerPoints.resize(nodesCount);
-                for(auto n = rulerPoints.begin(); n!= rulerPoints.end(); ++n)
-                {
-                    n->x = *(double*)(ptr);
-                    ptr += doubleSize;
-                    n->y = *(double*)(ptr);
-                    ptr += doubleSize;
-                }
-            }
-        }
+                const std::string &iconPath = "icons/DatabaseView/Survey.png");
+        public : QByteArray packPolygons() const;
+        public : void unpackPolygons(QByteArray buf);
+        public : QByteArray packRulerPoints() const;
+        public : void unpackRulerPoints(QByteArray buf);
         public : void setPolygonsAndRulerPoints(
                 const std::vector<PolygonF> &p,
-                const PolygonF &r)
-        {
-            for(auto _p = polygons.begin(); _p!= polygons.end(); ++_p)
-                _p->clear();
-            polygons.clear();
-            rulerPoints.clear();
-
-            polygons.resize(p.size());
-            for(size_t i=0 ; i < polygons.size(); ++i)
-                polygons[i] = p[i];
-            rulerPoints = r;
-        }
-        public :~Survey()
-        {
-            for(auto p = polygons.begin(); p!= polygons.end(); ++p)
-                p->clear();
-            polygons.clear();
-            rulerPoints.clear();
-        }
+                const PolygonF &r);
+        public :~Survey();
 
 //        public : int type() const override { return SURVEY_TYPE;}
     };
@@ -225,17 +114,18 @@ class DatabaseModel : public WContainerWidget
             WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
             id(ID),
             name(title),
-            notes(notes){}
+            notes(notes)
+        {
+        }
 //        public : int type() const override { return DOCTOR_TYPE;}
     };
 
+    public : WHBoxLayout *layout = nullptr;
     public : WTree *tree = nullptr;
     public : Doctor *doctor = nullptr;
-    public : DatabaseModel(WContainerWidget *parent) : WContainerWidget(parent)
-    {
-        tree = new WTree(this);
-        tree->setSelectionMode(SingleSelection);
-    }
+    public : WContainerWidget *treeContainer = nullptr;
+    public : WContainerWidget *viewContainer = nullptr;
+    public : DatabaseModel(WContainerWidget *parent);
     public: ~DatabaseModel(){}
 };
 }
