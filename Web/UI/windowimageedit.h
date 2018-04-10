@@ -66,9 +66,8 @@ class WindowImageEdit : public WContainerWidget
 
     WToolBar        *_myHeaderToolBar           = nullptr;
 
-    WLabel          *_myOpenButton              = nullptr; // see _onLoadPrepareImageUploader()
-    WPushButton     *_mySaveButton              = nullptr;
-    WPushButton     *_myExportButton            = nullptr;
+    WFileUpload     *_myWFileUpload             = nullptr;
+    WLabel          *_myOpenButton              = nullptr; // see _onLoadPrepareImageUploader();
 
     WPushButton     *_myPolygonButton           = nullptr;
     WPushButton     *_myRulerButton             = nullptr;
@@ -83,7 +82,7 @@ class WindowImageEdit : public WContainerWidget
     WPushButton     *_myConfigureButton         = nullptr;
     DialogImageSettings *_myDialogImageSettings = nullptr;
 
-    WFileUpload     *_myWFileUpload             = nullptr;
+
     DialogProgressbar *_myProgressBarDialog     = nullptr;
 
     WImage          *_myWImage                  = nullptr;
@@ -117,7 +116,7 @@ class WindowImageEdit : public WContainerWidget
     PolygonF        *_ptrToPolygonWhereNodeIsFound  = nullptr;
     PolygonF        *_ptrToPolygonWhereLineIsFound  = nullptr;
 
-    public:
+    public: // public for DialogImageSettings
     Color polygonEdgeColor            = Color(255, 255, 255);
     Color polygonColor                = Color(127, 127, 127);
     Color polygonTextColor            = Color(127, 255, 127);
@@ -129,7 +128,7 @@ class WindowImageEdit : public WContainerWidget
 
     private: void _clearPolygonsAndRuler();
 
-    public : void redrawWImage();
+    public : void redrawWImage();   // public for DialogImageSettings
 
     private: void _onLoadPrepareToolbar();
 
@@ -155,10 +154,7 @@ class WindowImageEdit : public WContainerWidget
 
     Point2d *_findNodeWithPosInRuler(const Point2d &pos);
 
-    bool _findLineWithPosInPolygons(
-            Point2d **ptrToA,
-            Point2d **ptrToB,
-            const Point2d &pos);
+    bool _findLineWithPosInPolygons(Point2d **ptrToA, Point2d **ptrToB, const Point2d &pos);
 
     private: void _onMouseWentDownEvent(WMouseEvent e);
 
@@ -167,6 +163,22 @@ class WindowImageEdit : public WContainerWidget
     private: void _onMouseDraggedEvent(WMouseEvent e);
 
     private: void _initializeMouseControl();
+
+    public : void setImage(const cv::Mat &img);
+
+    public : void copyAllDataTo(
+            cv::Mat &img,
+            std::vector<PolygonF> &pols,
+            PolygonF &pol,
+            double &a,
+            double &rf) const;
+
+    public : void copyAllDataFrom(
+        const cv::Mat &img,
+        const std::vector<PolygonF> &pols,
+        const PolygonF &pol,
+        const double &a,
+        const double &rf);
 
     public: WindowImageEdit(WContainerWidget *parent);
     public : ~WindowImageEdit();

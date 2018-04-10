@@ -34,7 +34,7 @@ class MainWindow : public WContainerWidget
     public : WNavigationBar *navigationBar = nullptr;
     public : WContainerWidget *mainContainer = nullptr;
 
-    public : WPushButton *intoPushButton = nullptr;
+//    public : WPushButton *intoPushButton = nullptr;
     public : WindowIntro *windowIntro = nullptr;
 
     public : WPushButton *logInOutPushButton = nullptr;
@@ -50,20 +50,11 @@ class MainWindow : public WContainerWidget
         }
         windowIntro = new WindowIntro(mainContainer);
     }
-    public :void _showImageEditContent()
-    {
-        for(auto child : mainContainer->children())
-        {
-            child->hide();
-            delete child;
-        }
-        windowImageEdit = new WindowImageEdit(mainContainer);
-    }
-    void _showIntroPushButton()
-    {
-        intoPushButton->setIcon(WLink("icons/Navigation/MainIcon.png"));
-        intoPushButton->setToolTip("Intro page");
-    }
+//    void _showIntroPushButton()
+//    {
+//        intoPushButton->setIcon(WLink("icons/Navigation/MainIcon.png"));
+//        intoPushButton->setToolTip("Intro page");
+//    }
     void _showLogInPushButton()
     {
         logInOutPushButton->setIcon(WLink("icons/Navigation/Log-In.png"));
@@ -83,12 +74,12 @@ class MainWindow : public WContainerWidget
 
         mainContainer = new WContainerWidget(this);
 
-        intoPushButton = new WPushButton(this);
-        intoPushButton->clicked().connect(std::bind([=](){
-            _showIntroContent();
-        }));
-        _showIntroPushButton();
-        navigationBar->addWidget(intoPushButton, AlignLeft);
+//        intoPushButton = new WPushButton(this);
+//        intoPushButton->clicked().connect(std::bind([=](){
+//            _showIntroContent();
+//        }));
+//        _showIntroPushButton();
+//        navigationBar->addWidget(intoPushButton, AlignLeft);
 
         logInOutPushButton = new WPushButton(this);
         logInOutPushButton->clicked().connect(std::bind([=](){
@@ -101,13 +92,12 @@ class MainWindow : public WContainerWidget
                     {
                         _logInOutState = false;
                         _showLogOutPushButton();
-                        _showImageEditContent();
 /////////////////////////////////////////////////////////////////////////////////////////
-//                        for(auto child : mainContainer->children())
-//                        {
-//                            child->hide();
-//                            delete child;
-//                        }
+                        for(auto child : mainContainer->children())
+                        {
+                            child->hide();
+                            delete child;
+                        }
                         DatabaseManagerWt::instance()->prepareDatabaseModel(this);
 /////////////////////////////////////////////////////////////////////////////////////////
                     }

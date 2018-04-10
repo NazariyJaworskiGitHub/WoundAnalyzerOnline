@@ -48,6 +48,7 @@ void Web::Ui::WindowImageEdit::redrawWImage()
 void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
 {
     _myHeaderToolBar = new WToolBar(this);
+    _myHeaderToolBar->setCompact(true);
 
     /// I can't change input=file in html and can't bind the button,
     /// so i have just bond the label
@@ -56,15 +57,6 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
     _myOpenButton->setStyleClass("btn");
     _onLoadPrepareImageUploader();
     _myHeaderToolBar->addWidget(_myOpenButton);
-    _myHeaderToolBar->setCompact(true);
-
-//    _mySaveButton = new  WPushButton("Save", this);
-//    _mySaveButton->setIcon(WLink("icons/ImageEdit/Save.png"));
-//    _myHeaderToolBar->addButton(_mySaveButton);
-
-//    _myExportButton = new  WPushButton("Export", this);
-//    _myExportButton->setIcon(WLink("icons/ImageEdit/Export.png"));
-//    _myHeaderToolBar->addButton(_myExportButton);
 
     _myHeaderToolBar->addSeparator();
 
@@ -143,13 +135,9 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareToolbar()
 
 void Web::Ui::WindowImageEdit::_onLoadPrepareImageArea()
 {
-//    WContainerWidget *_w = new WContainerWidget(this);
     _myWImage = new WImage(this);
     _myWImage->decorationStyle().setCursor(Wt::CrossCursor);
     _myWImage->setJavaScriptMember("oncontextmenu","function() {return false;}");
-//    _w->setAttributeValue("position","relative");
-//    _w->setAttributeValue("max-height","400px;");
-//    _w->setAttributeValue("overflow", "auto");
     _myWTable->elementAt(1, 0)->addWidget(_myWImage);
 }
 
@@ -170,14 +158,6 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareImageUploader()
             _myWFileUpload->setProgressBar(_myProgressBarDialog->getProgressBar());
             _myProgressBarDialog->show();
             _myWFileUpload->upload();
-            //                _myProgressBarDialog->signalStuck.connect(std::bind([=] () {
-            //                    std::cout << "new attempt\n";
-            //                    //_myWFileUpload->stealSpooledFile();
-            //                    _myWFileUpload->upload();
-            //                }));
-            //                _myWFileUpload->dataReceived().connect(std::bind([=] (long cur, long tot) {
-            //                    std::cout << "current " << cur << " total " << tot << std::endl;
-            //                }, std::placeholders::_1, std::placeholders::_1));
         }
     }));
 
@@ -291,10 +271,6 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareZoomSlider()
 
 void Web::Ui::WindowImageEdit::_disableUI()
 {
-//    _myOpenButton->disable();
-//    _mySaveButton->disable();
-//    _myExportButton->disable();
-
     _myPolygonButton->disable();
     _myRulerButton->disable();
     _myClearButton->disable();
@@ -320,10 +296,6 @@ void Web::Ui::WindowImageEdit::_disableUI()
 
 void Web::Ui::WindowImageEdit::_enableUI()
 {
-    //    _myOpenButton->enable();
-    //    _mySaveButton->enable();
-    //    _myExportButton->enable();
-
     _myPolygonButton->enable();
     _myRulerButton->enable();
     _myClearButton->enable();
@@ -385,11 +357,8 @@ void Web::Ui::WindowImageEdit::_changeTransparency(int value)
 {
     // slider has automatic min/max control
     _myWSliderTransparency->setValue(value);
-//    if(_myImageManagerWt->isImageOpened())
-//    {
         _myImageManagerWt->setDrawingLayerTransparency(_myWSliderTransparency->value()/100.0);
         redrawWImage();
-//    }
     _myWSliderTransparencyText->setText(_myWSliderTransparency->valueText() + "%");
 }
 
@@ -449,7 +418,7 @@ bool Web::Ui::WindowImageEdit::_findLineWithPosInPolygons(Point2d **ptrToA, Poin
                 }
                 *ptrToA = &*n;              // a = cur
             }
-            if(!found)  // check first-last
+            if(!found)                      // check first-last
             {
                 *ptrToB =  &p->front();
                 *ptrToA =  &p->back();
@@ -563,14 +532,58 @@ void Web::Ui::WindowImageEdit::_initializeMouseControl()
     _myWImage->mouseWentDown().connect(this, &WindowImageEdit::_onMouseWentDownEvent);
     _myWImage->mouseWentUp().connect(this, &WindowImageEdit::_onMouseWentUpEvent);
     _myWImage->mouseDragged().connect(this, &WindowImageEdit::_onMouseDraggedEvent);
-    //        _myWImage->mouseWheel().connect(std::bind([=] (WMouseEvent &e) {
-    //            _changeZoom(_myWSliderZoom->value() + e.wheelDelta());
-    //        },std::placeholders::_1));
+}
+
+void Web::Ui::WindowImageEdit::setImage(const Mat &img)
+{
+}
+
+void Web::Ui::WindowImageEdit::copyAllDataTo(Mat &img, std::vector<PolygonF> &pols, PolygonF &pol, double &a, double &rf) const
+{
+    img = this->_myImageManagerWt->getImage().clone();
+    for(auto p = pols.begin(); p!= pols.end(); ++p)
+        p->clear();
+    pols.clear();
+    for(auto p = polygons.begin(); p!= polygons.end(); ++p)
+    {
+        PolygonF newP;
+        for(auto n = p->begin(); n!= p->end(); ++n)
+            newP.push_back(Point2d(n->x,n->y));
+        pols.push_back(newP);
+    }
+    pol.clear();
+    for(auto n = rulerPoints.begin(); n!= rulerPoints.end(); ++n)
+        pol.push_back(Point2d(n->x,n->y));
+    a = woundsArea;
+    rf = this->_myImageManagerWt->getRulerFactor();
+}
+
+void Web::Ui::WindowImageEdit::copyAllDataFrom(const Mat &img, const std::vector<PolygonF> &pols, const PolygonF &pol, const double &a, const double &rf)
+{
+    for(auto p = polygons.begin(); p!= polygons.end(); ++p)
+        p->clear();
+    polygons.clear();
+    for(auto p = pols.begin(); p!= pols.end(); ++p)
+    {
+        PolygonF newP;
+        for(auto n = p->begin(); n!= p->end(); ++n)
+            newP.push_back(Point2d(n->x,n->y));
+        polygons.push_back(newP);
+    }
+    rulerPoints.clear();
+    for(auto n = pol.begin(); n!= pol.end(); ++n)
+        rulerPoints.push_back(Point2d(n->x,n->y));
+    woundsArea = a;
+    this->_myImageManagerWt->openImage(img);
+    this->_myImageManagerWt->setRulerFactor(rf);    //it should be after opening
+    this->_myRulerFactorSpinBox->setValue(rf);
+    redrawWImage();
+    _myWImage->show();
+    _enableUI();
 }
 
 Web::Ui::WindowImageEdit::WindowImageEdit(WContainerWidget *parent) : WContainerWidget(parent)
 {
-
     _myImageManagerWt = new ImageManagerWt(this);
 
     _myWTable = new WTable(this);
@@ -579,11 +592,10 @@ Web::Ui::WindowImageEdit::WindowImageEdit(WContainerWidget *parent) : WContainer
 
     _onLoadPrepareToolbar();  
 
-//    _onLoadPrepareImageUploader(); // see _onLoadPrepareToolbar();
-
     _onLoadPrepareFooter();
 
     _onLoadPrepareZoomSlider();
+
     _onLoadPrepareTransparencySlider();
 
     _initializeMouseControl();

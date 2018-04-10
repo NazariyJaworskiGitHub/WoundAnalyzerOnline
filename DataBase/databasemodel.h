@@ -15,7 +15,6 @@
 #include <Wt/WTree>
 #include <Wt/WTreeNode>
 #include <Wt/WIconPair>
-#include <Wt/WHBoxLayout>
 
 #include <QDateTime>
 #include <QByteArray>
@@ -45,11 +44,10 @@ class DatabaseModel : public WContainerWidget
         public : PolygonF rulerPoints;
         public : double rulerFactor = 1.0;
         public : double woundArea = -1;
-        public : Survey(
-                int ID,
+        public : Survey(int ID,
                 const QDateTime &date,
                 const std::string &notes,
-                const double woundArea,
+                const double woundarea,
                 WContainerWidget *parent = 0,
                 const std::string &iconPath = "icons/DatabaseView/Survey.png");
         public : QByteArray packPolygons() const;
@@ -62,6 +60,7 @@ class DatabaseModel : public WContainerWidget
         public :~Survey();
 
 //        public : int type() const override { return SURVEY_TYPE;}
+        WImage * convertFromCVMatToWImage();
     };
 
     public : class Wound : public WTreeNode
@@ -120,11 +119,11 @@ class DatabaseModel : public WContainerWidget
 //        public : int type() const override { return DOCTOR_TYPE;}
     };
 
-    public : WHBoxLayout *layout = nullptr;
     public : WTree *tree = nullptr;
     public : Doctor *doctor = nullptr;
     public : WContainerWidget *treeContainer = nullptr;
     public : WContainerWidget *viewContainer = nullptr;
+    public : WContainerWidget *buttonsContainer = nullptr;
     public : DatabaseModel(WContainerWidget *parent);
     public: ~DatabaseModel(){}
 };
