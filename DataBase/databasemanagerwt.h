@@ -23,7 +23,7 @@ class DatabaseManagerWt : public DatabaseManager
 {
     Q_OBJECT
 
-    public : bool connectToDatabase() throw (std::exception);
+    public : void connectToDatabase() throw (std::exception);
     public : DatabaseModel* prepareDatabaseModel(WContainerWidget *parent);
     public : bool loadSurveyWoundImage(DatabaseModel::Survey *target) const;
     private: bool _updateUtil(
@@ -39,11 +39,11 @@ class DatabaseManagerWt : public DatabaseManager
 
     public : DatabaseModel::Patient *add(DatabaseModel::Doctor  *parent);
     public : DatabaseModel::Wound   *add(DatabaseModel::Patient *parent);
-    public : DatabaseModel::Survey  *add(DatabaseModel::Wound   *parent, const Mat &image);
+    public : DatabaseModel::Survey  *add(DatabaseModel::Wound   *parent);
 
-    public : DatabaseModel::Wound   *del(DatabaseModel::Survey  *target);
-    public : DatabaseModel::Patient *del(DatabaseModel::Wound   *target);
-    public : DatabaseModel::Doctor  *del(DatabaseModel::Patient *target);
+    public : void del(DatabaseModel::Survey  *target);
+    public : void del(DatabaseModel::Wound   *target);
+    public : void del(DatabaseModel::Patient *target);
 
     private: DatabaseManagerWt(QObject *parent = nullptr): DatabaseManager(parent){}
     public : static DatabaseManagerWt *instance()

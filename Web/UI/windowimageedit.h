@@ -48,6 +48,8 @@
 #define RULER_FACTOR_MIN     0.01
 #define RULER_FACTOR_MAX    10.0
 
+#define WindowImageEdit_WIDTH 1040
+
 using namespace Wt;
 
 namespace Web
@@ -164,7 +166,7 @@ class WindowImageEdit : public WContainerWidget
 
     private: void _initializeMouseControl();
 
-    public : void setImage(const cv::Mat &img);
+    public : bool isImageOpened() const {return _myImageManagerWt->isImageOpened();}
 
     public : void copyAllDataTo(
             cv::Mat &img,

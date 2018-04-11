@@ -9,7 +9,7 @@
 #include "Utilities/Logger/logger.h"
 #include "configurationparameters.h"
 
-bool DatabaseManagerWt::connectToDatabase() throw (std::exception)
+void DatabaseManagerWt::connectToDatabase() throw (std::exception)
 {
     if(!DatabaseManager::connectToDatabase(
                 ConfigurationParameters::instance()->databaseParameters.HostName,
@@ -280,19 +280,19 @@ DatabaseModel::Wound *DatabaseManagerWt::add(DatabaseModel::Patient *parent)
     return newTarget;
 }
 
-DatabaseModel::Survey *DatabaseManagerWt::add(DatabaseModel::Wound *parent, const cv::Mat &image)
+DatabaseModel::Survey *DatabaseManagerWt::add(DatabaseModel::Wound *parent/*, const cv::Mat &image*/)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::INFO, "[Database] adding new survey to wound <" + parent->name + ">\n");
     DatabaseModel::Survey *newTarget = new DatabaseModel::Survey(
                 -1, QDateTime::currentDateTime(), "", -1);
-    newTarget->image = image.clone();
+//    newTarget->image = image.clone();
     query.prepare(
                 "INSERT INTO Surveys (WoundID, SurveyDate, Image)"
                 "VALUES ('" + QString::number(parent->id) + "','" +
                 newTarget->date.toString("yyyy-MM-dd hh:mm:ss") + "',:imageData);");
     std::vector<unsigned char> v;
-    cv::imencode(".jpg", newTarget->image.clone(), v);
+//    cv::imencode(".jpg", newTarget->image.clone(), v);
     query.bindValue(":imageData", QByteArray(reinterpret_cast<const char*>(v.data()),v.size()));
     if(query.exec())
         Log::GlobalLogger.msg(Log::INFO, "[Database] new survey is added \n");
@@ -306,7 +306,7 @@ DatabaseModel::Survey *DatabaseManagerWt::add(DatabaseModel::Wound *parent, cons
     return newTarget;
 }
 
-DatabaseModel::Wound *DatabaseManagerWt::del(DatabaseModel::Survey *target)
+void DatabaseManagerWt::del(DatabaseModel::Survey *target)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::INFO, "[Database] deleting survey <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
@@ -316,14 +316,10 @@ DatabaseModel::Wound *DatabaseManagerWt::del(DatabaseModel::Survey *target)
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
-        return nullptr;
     }
-    DatabaseModel::Wound *parent = static_cast<DatabaseModel::Wound*>(target->parentNode());
-    parent->removeChildNode(target);
-    return parent;
 }
 
-DatabaseModel::Patient *DatabaseManagerWt::del(DatabaseModel::Wound *target)
+void DatabaseManagerWt::del(DatabaseModel::Wound *target)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::INFO, "[Database] deleting wound <" + target->name + ">\n");
@@ -333,14 +329,10 @@ DatabaseModel::Patient *DatabaseManagerWt::del(DatabaseModel::Wound *target)
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
-        return nullptr;
     }
-    DatabaseModel::Patient *parent = static_cast<DatabaseModel::Patient*>(target->parentNode());
-    parent->removeChildNode(target);
-    return parent;
 }
 
-DatabaseModel::Doctor *DatabaseManagerWt::del(DatabaseModel::Patient *target)
+void DatabaseManagerWt::del(DatabaseModel::Patient *target)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::INFO, "[Database] deleting patient " + target->name + "\n");
@@ -350,9 +342,5 @@ DatabaseModel::Doctor *DatabaseManagerWt::del(DatabaseModel::Patient *target)
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
-        return nullptr;
     }
-    DatabaseModel::Doctor *parent = static_cast<DatabaseModel::Doctor*>(target->parentNode());
-    parent->removeChildNode(target);
-    return parent;
 }

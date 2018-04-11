@@ -534,10 +534,6 @@ void Web::Ui::WindowImageEdit::_initializeMouseControl()
     _myWImage->mouseDragged().connect(this, &WindowImageEdit::_onMouseDraggedEvent);
 }
 
-void Web::Ui::WindowImageEdit::setImage(const Mat &img)
-{
-}
-
 void Web::Ui::WindowImageEdit::copyAllDataTo(Mat &img, std::vector<PolygonF> &pols, PolygonF &pol, double &a, double &rf) const
 {
     img = this->_myImageManagerWt->getImage().clone();
@@ -579,7 +575,8 @@ void Web::Ui::WindowImageEdit::copyAllDataFrom(const Mat &img, const std::vector
     this->_myRulerFactorSpinBox->setValue(rf);
     redrawWImage();
     _myWImage->show();
-    _enableUI();
+    if(_myImageManagerWt->isImageOpened())
+        _enableUI();
 }
 
 Web::Ui::WindowImageEdit::WindowImageEdit(WContainerWidget *parent) : WContainerWidget(parent)

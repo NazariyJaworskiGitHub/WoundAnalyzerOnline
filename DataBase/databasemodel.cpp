@@ -10,7 +10,7 @@
 #include <Wt/WDialog>
 #include <Wt/WDateEdit>
 #include <Wt/WTimeEdit>
-#include <Wt/WTextArea>
+#include <Wt/WLineEdit>
 
 #include "databasemanagerwt.h"
 #include "configurationparameters.h"
@@ -38,6 +38,79 @@ WImage * Web::Ui::DatabaseModel::Survey::convertFromCVMatToWImage()
     return img;
 }
 
+WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(WObject *parent)
+{
+    WDialog *d = new WDialog(parent);
+    d->contents()->setMaximumSize(
+                CURRENT_SESSION->userScreenWidth - POPUP_DELTA,
+                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - POPUP_DELTA);
+    d->contents()->resize(
+                CURRENT_SESSION->userScreenWidth - POPUP_DELTA,
+                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - POPUP_DELTA);
+
+    WDateEdit *de = new WDateEdit(d->contents());
+    de->setDate(WDate(
+                    this->date.date().year(),
+                    this->date.date().month(),
+                    this->date.date().day()));
+    WTimeEdit *te = new WTimeEdit(d->contents());
+    te->setTime(WTime(
+                    this->date.time().hour(),
+                    this->date.time().minute(),
+                    this->date.time().second()));
+    d->contents()->addWidget(new WBreak());
+
+    WindowImageEdit *w = new WindowImageEdit(d->contents());
+    w->copyAllDataFrom(image,polygons,rulerPoints,woundArea,rulerFactor);
+    d->contents()->addWidget(new WBreak());
+
+    WTextArea *ta = new WTextArea(d->contents());
+    ta->setText(this->notes.data());
+    ta->resize(WindowImageEdit_WIDTH, POPUP_DELTA*2);
+    d->contents()->addWidget(new WBreak());
+
+    WPushButton *accept = new WPushButton("Accept",d->contents());
+    accept->clicked().connect(std::bind([=]()
+    {
+        if(w->isImageOpened())
+            d->accept();
+        else
+            WMessageBox::show("Warning", "Survey should have an image", Ok);
+    }));
+    accept->setFloatSide(Side::Right);
+    accept->setStyleClass("btn-primary");
+    WPushButton *cancel = new WPushButton("Cancel",d->contents());
+    cancel->clicked().connect(d,&WDialog::reject);
+    cancel->setStyleClass("btn-primary");
+    cancel->setFloatSide(Side::Right);
+
+    d->finished().connect(std::bind([=](WDialog::DialogCode code){
+        if(code == WDialog::Accepted)
+        {
+            w->copyAllDataTo(image,polygons,rulerPoints,woundArea,rulerFactor);
+            this->date.setDate(QDate(
+                                   de->date().year(),
+                                   de->date().month(),
+                                   de->date().day()));
+            this->date.setTime(QTime(
+                                   te->time().hour(),
+                                   te->time().minute(),
+                                   te->time().second()));
+            this->notes = ta->text().toUTF8();
+            DatabaseManagerWt::instance()->update(this);
+            this->label()->setText(
+                        this->date.toString("dd.MM.yyyy hh:mm").toStdString() + " " +
+                        ((this->woundArea > 0) ?
+                        (QString::number(this->woundArea,'f',2).toStdString() + "sm<sup>2</sup>") :
+                        ("")));
+        }
+    },std::placeholders::_1));
+
+    d->show();
+
+    return d;
+}
+
 Web::Ui::DatabaseModel::Survey::Survey(
         int ID,
         const QDateTime &date,
@@ -47,7 +120,7 @@ Web::Ui::DatabaseModel::Survey::Survey(
         const std::string &iconPath):
     WTreeNode(
         date.toString("dd.MM.yyyy hh:mm").toStdString() + " " +
-        ((woundarea != 0) ?
+        ((woundarea > 0) ?
              (QString::number(woundarea,'f',2).toStdString() + "sm<sup>2</sup>") :
              ("")),
         //should do this becouse cant access to labelText_
@@ -59,80 +132,15 @@ Web::Ui::DatabaseModel::Survey::Survey(
 {
     this->selected().connect(std::bind([=](){
         TREE->viewContainer->clear();
+        TREE->notesContainer->setText(this->notes.data());
         TREE->buttonsContainer->clear();
 
         DatabaseManagerWt::instance()->loadSurveyWoundImage(this);
-        TREE->viewContainer->addWidget(convertFromCVMatToWImage());
+        TREE->viewContainer->addWidget(convertFromCVMatToWImage());       
 
-        WPushButton *editButton = new WPushButton("Edit",TREE->buttonsContainer);
-        editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
-        editButton->clicked().connect(std::bind([=](){
-            WDialog *d = new WDialog(TREE->viewContainer);
-            d->contents()->setMaximumSize(
-                        CURRENT_SESSION->userScreenWidth - POPUP_DELTA,
-                        CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - POPUP_DELTA);
-            d->contents()->resize(
-                        CURRENT_SESSION->userScreenWidth - POPUP_DELTA,
-                        CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - POPUP_DELTA);
-
-            WDateEdit *de = new WDateEdit(d->contents());
-            de->setDate(WDate(
-                            this->date.date().year(),
-                            this->date.date().month(),
-                            this->date.date().day()));
-            WTimeEdit *te = new WTimeEdit(d->contents());
-            te->setTime(WTime(
-                            this->date.time().hour(),
-                            this->date.time().minute(),
-                            this->date.time().second()));
-            d->contents()->addWidget(new WBreak());
-
-            WindowImageEdit *w = new WindowImageEdit(d->contents());
-            w->copyAllDataFrom(image,polygons,rulerPoints,woundArea,rulerFactor);
-            d->contents()->addWidget(new WBreak());
-
-            WTextArea *ta = new WTextArea(d->contents());
-            ta->setText(this->notes.data());
-            d->contents()->addWidget(new WBreak());
-
-            WPushButton *accept = new WPushButton("Accept",d->contents());
-            accept->clicked().connect(d,&WDialog::accept);
-            accept->setFloatSide(Side::Right);
-            accept->setStyleClass("btn-primary");
-            WPushButton *cancel = new WPushButton("Cancel",d->contents());
-            cancel->clicked().connect(d,&WDialog::reject);
-            cancel->setStyleClass("btn-primary");
-            cancel->setFloatSide(Side::Right);
-
-            d->show();
-            d->finished().connect(std::bind([=](WDialog::DialogCode code){
-                if(code == WDialog::Accepted)
-                {
-                    w->copyAllDataTo(image,polygons,rulerPoints,woundArea,rulerFactor);
-                    this->date.setDate(QDate(
-                                           de->date().year(),
-                                           de->date().month(),
-                                           de->date().day()));
-                    this->date.setTime(QTime(
-                                           te->time().hour(),
-                                           te->time().minute(),
-                                           te->time().second()));
-                    this->notes = ta->text().toUTF8();
-                    DatabaseManagerWt::instance()->update(this);
-                    this->label()->setText(
-                                date.toString("dd.MM.yyyy hh:mm").toStdString() + " " +
-                                ((woundarea != 0) ?
-                                (QString::number(woundarea,'f',2).toStdString() + "sm<sup>2</sup>") :
-                                ("")));
-                    this->label()->show();
-                    TREE->viewContainer->clear();
-                    TREE->viewContainer->addWidget(convertFromCVMatToWImage());
-                }
-            },std::placeholders::_1));
-        }));
-
-        WPushButton *deleteButton = new WPushButton("Delete",TREE->buttonsContainer);
+        WPushButton *deleteButton = new WPushButton("Delete survey",TREE->buttonsContainer);
         deleteButton->setIcon(WLink("icons/DatabaseView/Delete.png"));
+        deleteButton->setFloatSide(Side::Left);
         deleteButton->clicked().connect(std::bind([=](){
             if(WMessageBox::show(
                         "Warning",
@@ -140,10 +148,21 @@ Web::Ui::DatabaseModel::Survey::Survey(
                         Yes | No) == Yes)
             {
                 TREE->viewContainer->clear();
+                TREE->notesContainer->setText("");
                 TREE->buttonsContainer->clear();
                 DatabaseManagerWt::instance()->del(this);
-                TREE->treeContainer->show();
+                delete this;
             }
+        }));
+
+        WPushButton *editButton = new WPushButton("Edit survey",TREE->buttonsContainer);
+        editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
+        editButton->setFloatSide(Side::Right);
+        editButton->clicked().connect(std::bind([=](){
+            callSurveyEditDialog(TREE->viewContainer);
+            TREE->viewContainer->clear();
+            TREE->viewContainer->addWidget(convertFromCVMatToWImage());
+            TREE->notesContainer->setText(this->notes.data());
         }));
     }));
 }
@@ -264,6 +283,194 @@ Web::Ui::DatabaseModel::Survey::~Survey()
     rulerPoints.clear();
 }
 
+DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
+    WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
+    id(ID),
+    name(title),
+    notes(notes)
+{
+    this->selected().connect(std::bind([=](){
+        TREE->viewContainer->clear();
+        TREE->notesContainer->setText(this->notes.data());
+        TREE->buttonsContainer->clear();
+
+        WPushButton *deleteButton = new WPushButton("Delete wound",TREE->buttonsContainer);
+        deleteButton->setIcon(WLink("icons/DatabaseView/Delete.png"));
+        deleteButton->setFloatSide(Side::Left);
+        deleteButton->clicked().connect(std::bind([=](){
+            if(WMessageBox::show(
+                        "Warning",
+                        "Do you really want to delete this wound?",
+                        Yes | No) == Yes)
+            {
+                TREE->viewContainer->clear();
+                TREE->notesContainer->setText("");
+                TREE->buttonsContainer->clear();
+                DatabaseManagerWt::instance()->del(this);
+                delete this;
+            }
+        }));
+
+        WPushButton *editButton = new WPushButton("Edit wound",TREE->buttonsContainer);
+        editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
+        editButton->setFloatSide(Side::Right);
+        editButton->clicked().connect(std::bind([=](){
+            std::string oldName = this->name;
+            std::string oldNotes = this->notes;
+            WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Wound>(
+                        this, "Wound", TREE->viewContainer);
+            d->finished().connect(std::bind([=](WDialog::DialogCode code){
+                if(code != WDialog::Accepted)
+                {
+                    this->name = oldName;
+                    this->notes = oldNotes;
+                    this->label()->setText(this->name.data());
+                }
+                TREE->notesContainer->setText(this->notes.data());
+            },std::placeholders::_1));
+        }));
+
+        WPushButton *addButton = new WPushButton("Add survey",TREE->buttonsContainer);
+        addButton->setIcon(WLink("icons/DatabaseView/Add.png"));
+        addButton->setFloatSide(Side::Right);
+        addButton->clicked().connect(std::bind([=](){
+            DatabaseModel::Survey *survey = DatabaseManagerWt::instance()->add(this);
+            WDialog *d = survey->callSurveyEditDialog(TREE->viewContainer);
+            d->finished().connect(std::bind([=](WDialog::DialogCode code){
+                if(code == WDialog::Accepted)
+                {
+                    this->addChildNode(survey);
+                }
+                else
+                {
+                    DatabaseManagerWt::instance()->del(survey);
+                    delete survey;
+                }
+            },std::placeholders::_1));
+        }));
+    }));
+}
+
+template <class T1> WDialog * Web::Ui::DatabaseModel::callNotesEditDialog(
+        T1 *target,const std::string &title, WObject *parent)
+{
+    WDialog *d = new WDialog(parent);
+    d->contents()->setMaximumSize(
+                CURRENT_SESSION->userScreenWidth - POPUP_DELTA,
+                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - POPUP_DELTA);
+    d->contents()->resize(
+                CURRENT_SESSION->userScreenWidth - POPUP_DELTA,
+                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - POPUP_DELTA);
+
+    WLabel *lel = new WLabel((title + " name").data(),d->contents());
+    WLineEdit *le = new WLineEdit(d->contents());
+    le->setText(target->name.data());
+    lel->setBuddy(le);
+    le->resize( CURRENT_SESSION->userScreenWidth - POPUP_DELTA*2,
+                WLength::Auto);
+
+    WTextArea *ta = new WTextArea(d->contents());
+    ta->setText(target->notes.data());
+    ta->resize(CURRENT_SESSION->userScreenWidth - POPUP_DELTA*2, POPUP_DELTA*2);
+    d->contents()->addWidget(new WBreak());
+
+    WPushButton *accept = new WPushButton("Accept",d->contents());
+    accept->clicked().connect(std::bind([=]()
+    {
+        if(!le->text().empty())
+            d->accept();
+        else
+            WMessageBox::show("Warning", (title + " should have a name").data(), Ok);
+    }));
+    accept->setFloatSide(Side::Right);
+    accept->setStyleClass("btn-primary");
+    WPushButton *cancel = new WPushButton("Cancel",d->contents());
+    cancel->clicked().connect(d,&WDialog::reject);
+    cancel->setStyleClass("btn-primary");
+    cancel->setFloatSide(Side::Right);
+
+    d->finished().connect(std::bind([=](WDialog::DialogCode code){
+        if(code == WDialog::Accepted)
+        {
+            target->name = le->text().toUTF8();
+            target->notes = ta->text().toUTF8();
+            DatabaseManagerWt::instance()->update(target);
+            target->label()->setText(target->name.data());
+        }
+    },std::placeholders::_1));
+
+    d->show();
+    return d;
+}
+
+Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
+    WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
+    id(ID),
+    name(title),
+    notes(notes)
+{
+    this->selected().connect(std::bind([=](){
+        TREE->viewContainer->clear();
+        TREE->notesContainer->setText(this->notes.data());
+        TREE->buttonsContainer->clear();
+
+        WPushButton *deleteButton = new WPushButton("Delete patient",TREE->buttonsContainer);
+        deleteButton->setIcon(WLink("icons/DatabaseView/Delete.png"));
+        deleteButton->setFloatSide(Side::Left);
+        deleteButton->clicked().connect(std::bind([=](){
+            if(WMessageBox::show(
+                        "Warning",
+                        "Do you really want to delete this patient?",
+                        Yes | No) == Yes)
+            {
+                TREE->viewContainer->clear();
+                TREE->notesContainer->setText("");
+                TREE->buttonsContainer->clear();
+                DatabaseManagerWt::instance()->del(this);
+                delete this;
+            }
+        }));
+
+        WPushButton *editButton = new WPushButton("Edit patient",TREE->buttonsContainer);
+        editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
+        editButton->setFloatSide(Side::Right);
+        editButton->clicked().connect(std::bind([=](){
+            std::string oldName = this->name;
+            std::string oldNotes = this->notes;
+            WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Patient>(
+                        this, "Patient", TREE->viewContainer);
+            d->finished().connect(std::bind([=](WDialog::DialogCode code){
+                if(code != WDialog::Accepted)
+                {
+                    this->name = oldName;
+                    this->notes = oldNotes;
+                    this->label()->setText(this->name.data());
+                }
+                TREE->notesContainer->setText(this->notes.data());
+            },std::placeholders::_1));
+        }));
+
+        WPushButton *addButton = new WPushButton("Add wound",TREE->buttonsContainer);
+        addButton->setIcon(WLink("icons/DatabaseView/Add.png"));
+        addButton->setFloatSide(Side::Right);
+        addButton->clicked().connect(std::bind([=](){
+            DatabaseModel::Wound *wound = DatabaseManagerWt::instance()->add(this);
+            WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Wound>(
+                        wound, "Wound", TREE->viewContainer);
+            d->finished().connect(std::bind([=](WDialog::DialogCode code){
+                if(code == WDialog::Accepted)
+                {
+                    this->addChildNode(wound);
+                }
+                else
+                {
+                    DatabaseManagerWt::instance()->del(wound);
+                    delete wound;
+                }
+            },std::placeholders::_1));
+        }));
+    }));
+}
 
 Web::Ui::DatabaseModel::DatabaseModel(WContainerWidget *parent) : WContainerWidget(parent)
 {
@@ -293,11 +500,24 @@ Web::Ui::DatabaseModel::DatabaseModel(WContainerWidget *parent) : WContainerWidg
     viewContainer->setOverflow(OverflowAuto);
     viewContainer->setMaximumSize(
                 CURRENT_SESSION->userScreenWidth - TREE_VIEW_WIDTH,
-                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - BUTTONS_HEIGHT);
+                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - BUTTONS_HEIGHT*3);
     viewContainer->resize(
                 CURRENT_SESSION->userScreenWidth - TREE_VIEW_WIDTH,
-                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - BUTTONS_HEIGHT);
+                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - BUTTONS_HEIGHT*3);
     layout3->addWidget(viewContainer);
+
+    notesContainer = new WTextArea(this);
+    notesContainer->setStyleClass("thumbnail");
+    //notesContainer->setOverflow(OverflowAuto);
+    notesContainer->setReadOnly(true);
+    notesContainer->setMaximumSize(
+                CURRENT_SESSION->userScreenWidth - TREE_VIEW_WIDTH,
+                BUTTONS_HEIGHT*2 - BUTTONS_HEIGHT/3);
+    notesContainer->resize(
+                CURRENT_SESSION->userScreenWidth - TREE_VIEW_WIDTH,
+                BUTTONS_HEIGHT*2 - BUTTONS_HEIGHT/3);
+    layout3->addWidget(notesContainer);
+
 
     buttonsContainer = new WContainerWidget(this);
     buttonsContainer->setMaximumSize(

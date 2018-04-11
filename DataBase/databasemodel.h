@@ -15,16 +15,12 @@
 #include <Wt/WTree>
 #include <Wt/WTreeNode>
 #include <Wt/WIconPair>
+#include <Wt/WTextArea>
 
 #include <QDateTime>
 #include <QByteArray>
 
 #include "Image/imagemanager.h"
-
-//#define SURVEY_TYPE     1001
-//#define WOUND_TYPE      1002
-//#define PATIENT_TYPE    1003
-//#define DOCTOR_TYPE     1004
 
 using namespace Wt;
 
@@ -59,8 +55,8 @@ class DatabaseModel : public WContainerWidget
                 const PolygonF &r);
         public :~Survey();
 
-//        public : int type() const override { return SURVEY_TYPE;}
         WImage * convertFromCVMatToWImage();
+        WDialog *callSurveyEditDialog(WObject *parent);
     };
 
     public : class Wound : public WTreeNode
@@ -73,12 +69,7 @@ class DatabaseModel : public WContainerWidget
                 const std::string &title,
                 const std::string &notes,
                 WContainerWidget *parent = 0,
-                const std::string &iconPath = "icons/DatabaseView/Wound.png"):
-            WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
-            id(ID),
-            name(title),
-            notes(notes){}
-//        public : int type() const override { return WOUND_TYPE;}
+                const std::string &iconPath = "icons/DatabaseView/Wound.png");
     };
 
     public : class Patient : public WTreeNode
@@ -91,12 +82,7 @@ class DatabaseModel : public WContainerWidget
                 const std::string &title,
                 const std::string &notes,
                 WContainerWidget *parent = 0,
-                const std::string &iconPath = "icons/DatabaseView/Patient.png"):
-            WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
-            id(ID),
-            name(title),
-            notes(notes){}
-//        public : int type() const override { return PATIENT_TYPE;}
+                const std::string &iconPath = "icons/DatabaseView/Patient.png");
     };
 
     public : class Doctor : public WTreeNode
@@ -116,13 +102,18 @@ class DatabaseModel : public WContainerWidget
             notes(notes)
         {
         }
-//        public : int type() const override { return DOCTOR_TYPE;}
     };
+
+    public : template <class T> static WDialog *callNotesEditDialog(
+            T *target,
+            const std::string &title,
+            WObject *parent);
 
     public : WTree *tree = nullptr;
     public : Doctor *doctor = nullptr;
     public : WContainerWidget *treeContainer = nullptr;
     public : WContainerWidget *viewContainer = nullptr;
+    public : WTextArea *notesContainer = nullptr;
     public : WContainerWidget *buttonsContainer = nullptr;
     public : DatabaseModel(WContainerWidget *parent);
     public: ~DatabaseModel(){}
