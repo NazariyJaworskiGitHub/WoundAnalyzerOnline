@@ -42,10 +42,10 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
     /////////////////////////////////////////////////////////////////////////////////////
     {
         QSqlQuery doctorsQuery(QSqlDatabase::database(DATABASENAME));
-        Log::GlobalLogger.msg(Log::INFO, "[Database] searching id of <" + CURRENT_SESSION->currentUser->username + ">\n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] searching id of <" + CURRENT_SESSION->currentUser->username + ">\n");
         str = ("SELECT ID, DoctorName, Notes FROM Doctors WHERE Login = '" + CURRENT_SESSION->currentUser->username + "'").data();
         if(doctorsQuery.exec(str))
-            Log::GlobalLogger.msg(Log::INFO, "[Database] id found\n");
+            Log::GlobalLogger.msg(Log::TRACE, "[Database] id found\n");
         else
         {
             Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + doctorsQuery.lastError().text().toStdString() + "\n");
@@ -64,10 +64,10 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
     //////////////////////////////////////////////////////////////////////////////////////
     {
         QSqlQuery patientsQuery(QSqlDatabase::database(DATABASENAME));
-        Log::GlobalLogger.msg(Log::INFO, "[Database] loading patients of <" + CURRENT_SESSION->currentUser->username + ">\n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] loading patients of <" + CURRENT_SESSION->currentUser->username + ">\n");
         str = "SELECT ID, PatientName, Notes FROM Patients WHERE DoctorID = " + QString::number(DBmodel->doctor->id);
         if(patientsQuery.exec(str))
-            Log::GlobalLogger.msg(Log::INFO, "[Database] patients are loaded\n");
+            Log::GlobalLogger.msg(Log::TRACE, "[Database] patients are loaded\n");
         else
         {
             Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + patientsQuery.lastError().text().toStdString() + "\n");
@@ -86,10 +86,10 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
             ///////////////////////////////////////////////////////////////////////////////
             {
                 QSqlQuery woundsQuery(QSqlDatabase::database(DATABASENAME));
-                Log::GlobalLogger.msg(Log::INFO, "[Database] loading wounds of <" + patient->name + ">\n");
+                Log::GlobalLogger.msg(Log::TRACE, "[Database] loading wounds of <" + patient->name + ">\n");
                 str = "SELECT ID, WoundName, Notes FROM Wounds WHERE PatientID = " + QString::number(patient->id);
                 if(woundsQuery.exec(str))
-                    Log::GlobalLogger.msg(Log::INFO, "[Database] wounds are loaded\n");
+                    Log::GlobalLogger.msg(Log::TRACE, "[Database] wounds are loaded\n");
                 else
                 {
                     Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + woundsQuery.lastError().text().toStdString() + "\n");
@@ -107,10 +107,10 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
                     ///////////////////////////////////////////////////////////////////////
                     {
                         QSqlQuery surveyQuery(QSqlDatabase::database(DATABASENAME));
-                        Log::GlobalLogger.msg(Log::INFO, "[Database] loading surveys of <" + wound->name + ">\n");
+                        Log::GlobalLogger.msg(Log::TRACE, "[Database] loading surveys of <" + wound->name + ">\n");
                         str = "SELECT ID, SurveyDate, Notes, WoundArea FROM Surveys WHERE WoundID = " + QString::number(wound->id);
                         if(surveyQuery.exec(str))
-                            Log::GlobalLogger.msg(Log::INFO, "[Database] surveys are loaded\n");
+                            Log::GlobalLogger.msg(Log::TRACE, "[Database] surveys are loaded\n");
                         else
                         {
                             Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + surveyQuery.lastError().text().toStdString() + "\n");
@@ -146,10 +146,10 @@ bool DatabaseManagerWt::loadSurveyWoundImage(DatabaseModel::Survey *target) cons
     QSqlRecord record;
     QString str;
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] loading survey wound image of <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] loading survey wound image of <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
     str = "SELECT Image, Polygons, RulerPoints, RulerFactor FROM Surveys WHERE ID = " + QString::number(target->id);
     if(query.exec(str))
-        Log::GlobalLogger.msg(Log::INFO, "[Database] survey wound image is loaded\n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] survey wound image is loaded\n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
@@ -181,12 +181,12 @@ bool DatabaseManagerWt::_updateUtil(
         const int id) const
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] updating <" + param + "> <" + name + ">\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] updating <" + param + "> <" + name + ">\n");
     query.prepare(("UPDATE " + param + "s SET " + param + "Name = '" + name +
                   "', Notes = :notes WHERE ID = ").data() + QString::number(id));
     query.bindValue(":notes", notes.data());
     if(query.exec())
-        Log::GlobalLogger.msg(Log::INFO, "[Database] <" + param + "> is updated \n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] <" + param + "> is updated \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
@@ -213,7 +213,7 @@ bool DatabaseManagerWt::update(DatabaseModel::Doctor *target)
 bool DatabaseManagerWt::update(DatabaseModel::Survey *target)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] updating survey <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] updating survey <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
     std::vector<unsigned char> v;
     cv::imencode(".jpg", target->image, v);
     query.prepare(
@@ -231,7 +231,7 @@ bool DatabaseManagerWt::update(DatabaseModel::Survey *target)
     query.bindValue(":polygonsData", target->packPolygons());
     query.bindValue(":rulerPoints", target->packRulerPoints());
     if(query.exec())
-        Log::GlobalLogger.msg(Log::INFO, "[Database] survey is updated \n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] survey is updated \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
@@ -243,47 +243,45 @@ bool DatabaseManagerWt::update(DatabaseModel::Survey *target)
 DatabaseModel::Patient * DatabaseManagerWt::add(DatabaseModel::Doctor *parent)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] adding new patient to doctor <" + parent->name + ">\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] adding new patient to doctor <" + parent->name + ">\n");
     DatabaseModel::Patient *newTarget = new DatabaseModel::Patient(-1,"New patient","");
     query.prepare(
                 "INSERT INTO Patients (DoctorID, PatientName)"
                 "VALUES ('" + QString::number(parent->id) + "','New patient');");
     if(query.exec())
-        Log::GlobalLogger.msg(Log::INFO, "[Database] new patient is added \n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] new patient is added \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
         return nullptr;
     }
     newTarget->id = query.lastInsertId().toInt();
-    parent->addChildNode(newTarget);
     return newTarget;
 }
 
 DatabaseModel::Wound *DatabaseManagerWt::add(DatabaseModel::Patient *parent)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] adding new wound to patient <" + parent->name + ">\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] adding new wound to patient <" + parent->name + ">\n");
     DatabaseModel::Wound *newTarget = new DatabaseModel::Wound(-1, "New wound", "");
     query.prepare(
                 "INSERT INTO Wounds (PatientID, WoundName)"
                 "VALUES ('" + QString::number(parent->id) + "','New wound');");
     if(query.exec())
-        Log::GlobalLogger.msg(Log::INFO, "[Database] new wound is added \n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] new wound is added \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
         return nullptr;
     }
     newTarget->id = query.lastInsertId().toInt();
-    parent->addChildNode(newTarget);
     return newTarget;
 }
 
 DatabaseModel::Survey *DatabaseManagerWt::add(DatabaseModel::Wound *parent/*, const cv::Mat &image*/)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] adding new survey to wound <" + parent->name + ">\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] adding new survey to wound <" + parent->name + ">\n");
     DatabaseModel::Survey *newTarget = new DatabaseModel::Survey(
                 -1, QDateTime::currentDateTime(), "", -1);
 //    newTarget->image = image.clone();
@@ -295,24 +293,23 @@ DatabaseModel::Survey *DatabaseManagerWt::add(DatabaseModel::Wound *parent/*, co
 //    cv::imencode(".jpg", newTarget->image.clone(), v);
     query.bindValue(":imageData", QByteArray(reinterpret_cast<const char*>(v.data()),v.size()));
     if(query.exec())
-        Log::GlobalLogger.msg(Log::INFO, "[Database] new survey is added \n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] new survey is added \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
         return nullptr;
     }
     newTarget->id = query.lastInsertId().toInt();
-    parent->addChildNode(newTarget);
     return newTarget;
 }
 
 void DatabaseManagerWt::del(DatabaseModel::Survey *target)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] deleting survey <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] deleting survey <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
     query.prepare( "DELETE FROM Surveys WHERE ID = " + QString::number(target->id));
     if(query.exec())
-        Log::GlobalLogger.msg(Log::INFO, "[Database] survey is deleted \n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] survey is deleted \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
@@ -322,10 +319,10 @@ void DatabaseManagerWt::del(DatabaseModel::Survey *target)
 void DatabaseManagerWt::del(DatabaseModel::Wound *target)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] deleting wound <" + target->name + ">\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] deleting wound <" + target->name + ">\n");
     query.prepare( "DELETE FROM Wounds WHERE ID = " + QString::number(target->id));
     if(query.exec())
-        Log::GlobalLogger.msg(Log::INFO, "[Database] wound is deleted \n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] wound is deleted \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
@@ -335,10 +332,10 @@ void DatabaseManagerWt::del(DatabaseModel::Wound *target)
 void DatabaseManagerWt::del(DatabaseModel::Patient *target)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
-    Log::GlobalLogger.msg(Log::INFO, "[Database] deleting patient " + target->name + "\n");
+    Log::GlobalLogger.msg(Log::TRACE, "[Database] deleting patient " + target->name + "\n");
     query.prepare( "DELETE FROM Patients WHERE ID = " + QString::number(target->id));
     if(query.exec())
-        Log::GlobalLogger.msg(Log::INFO, "[Database] patient is deleted \n");
+        Log::GlobalLogger.msg(Log::TRACE, "[Database] patient is deleted \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");

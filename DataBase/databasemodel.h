@@ -30,6 +30,45 @@ namespace Ui {
 
 class DatabaseModel : public WContainerWidget
 {
+    public : class Doctor : public WTreeNode
+    {
+        public : int id;
+        public : std::string name;
+        public : std::string notes;
+        public : Doctor(
+                int ID,
+                const std::string &title,
+                const std::string &notes,
+                WContainerWidget *parent = 0,
+                const std::string &iconPath = "icons/DatabaseView/Doctor.png");
+    };
+
+    public : class Patient : public WTreeNode
+    {
+        public : int id;
+        public : std::string name;
+        public : std::string notes;
+        public : Patient(
+                int ID,
+                const std::string &title,
+                const std::string &notes,
+                WContainerWidget *parent = 0,
+                const std::string &iconPath = "icons/DatabaseView/Patient.png");
+    };
+
+    public : class Wound : public WTreeNode
+    {
+        public : int id;
+        public : std::string name;
+        public : std::string notes;
+        public : Wound(
+                int ID,
+                const std::string &title,
+                const std::string &notes,
+                WContainerWidget *parent = 0,
+                const std::string &iconPath = "icons/DatabaseView/Wound.png");
+    };
+
     public : class Survey : public WTreeNode
     {
         public : int id;
@@ -50,63 +89,17 @@ class DatabaseModel : public WContainerWidget
         public : void unpackPolygons(QByteArray buf);
         public : QByteArray packRulerPoints() const;
         public : void unpackRulerPoints(QByteArray buf);
-        public : void setPolygonsAndRulerPoints(
-                const std::vector<PolygonF> &p,
-                const PolygonF &r);
         public :~Survey();
-
         WImage * convertFromCVMatToWImage();
-        WDialog *callSurveyEditDialog(WObject *parent);
+        WDialog *callSurveyEditDialog(WObject *parent, WTextArea *textArea, bool addToTree, Wound *caller);
     };
 
-    public : class Wound : public WTreeNode
-    {
-        public : int id;
-        public : std::string name;
-        public : std::string notes;
-        public : Wound(
-                int ID,
-                const std::string &title,
-                const std::string &notes,
-                WContainerWidget *parent = 0,
-                const std::string &iconPath = "icons/DatabaseView/Wound.png");
-    };
-
-    public : class Patient : public WTreeNode
-    {
-        public : int id;
-        public : std::string name;
-        public : std::string notes;
-        public : Patient(
-                int ID,
-                const std::string &title,
-                const std::string &notes,
-                WContainerWidget *parent = 0,
-                const std::string &iconPath = "icons/DatabaseView/Patient.png");
-    };
-
-    public : class Doctor : public WTreeNode
-    {
-        public : int id;
-        public : std::string name;
-        public : std::string notes;
-        public : Doctor(
-                int ID,
-                const std::string &title,
-                const std::string &notes,
-                WContainerWidget *parent = 0,
-                const std::string &iconPath = "icons/DatabaseView/Doctor.png"):
-            WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
-            id(ID),
-            name(title),
-            notes(notes)
-        {
-        }
-    };
-
-    public : template <class T> static WDialog *callNotesEditDialog(
-            T *target,
+    public : template <class T1, class T2> static WDialog *callNotesEditDialog(
+            T1 *caller,
+            T2 *target,
             const std::string &title,
+            bool addToTree,
+            WTextArea *textArea,
             WObject *parent);
 
     public : WTree *tree = nullptr;

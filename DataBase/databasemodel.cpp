@@ -38,7 +38,12 @@ WImage * Web::Ui::DatabaseModel::Survey::convertFromCVMatToWImage()
     return img;
 }
 
-WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(WObject *parent)
+/// \todo move it to separated class
+WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
+        WObject *parent,
+        WTextArea *textArea,
+        bool addToTree,
+        DatabaseModel::Wound *caller)
 {
     WDialog *d = new WDialog(parent);
     d->contents()->setMaximumSize(
@@ -103,6 +108,16 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(WObject *parent)
                         ((this->woundArea > 0) ?
                         (QString::number(this->woundArea,'f',2).toStdString() + "sm<sup>2</sup>") :
                         ("")));
+            if(addToTree)
+            {
+                caller->addChildNode(this);
+                caller->expand();
+                caller->tree()->select(this);
+            }
+            else
+            {
+                textArea->setText(this->notes.data());
+            }
         }
     },std::placeholders::_1));
 
@@ -147,10 +162,12 @@ Web::Ui::DatabaseModel::Survey::Survey(
                         "Do you really want to delete this survey?",
                         Yes | No) == Yes)
             {
+                DatabaseManagerWt::instance()->del(this);
+                this->tree()->clearSelection();
                 TREE->viewContainer->clear();
                 TREE->notesContainer->setText("");
                 TREE->buttonsContainer->clear();
-                DatabaseManagerWt::instance()->del(this);
+                this->parentNode()->removeChildNode(this);
                 delete this;
             }
         }));
@@ -159,10 +176,9 @@ Web::Ui::DatabaseModel::Survey::Survey(
         editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
         editButton->setFloatSide(Side::Right);
         editButton->clicked().connect(std::bind([=](){
-            callSurveyEditDialog(TREE->viewContainer);
+            callSurveyEditDialog(TREE->viewContainer,TREE->notesContainer,false,nullptr);
             TREE->viewContainer->clear();
             TREE->viewContainer->addWidget(convertFromCVMatToWImage());
-            TREE->notesContainer->setText(this->notes.data());
         }));
     }));
 }
@@ -262,19 +278,6 @@ void Web::Ui::DatabaseModel::Survey::unpackRulerPoints(QByteArray buf)
     }
 }
 
-void Web::Ui::DatabaseModel::Survey::setPolygonsAndRulerPoints(const std::vector<PolygonF> &p, const PolygonF &r)
-{
-    for(auto _p = polygons.begin(); _p!= polygons.end(); ++_p)
-        _p->clear();
-    polygons.clear();
-    rulerPoints.clear();
-
-    polygons.resize(p.size());
-    for(size_t i=0 ; i < polygons.size(); ++i)
-        polygons[i] = p[i];
-    rulerPoints = r;
-}
-
 Web::Ui::DatabaseModel::Survey::~Survey()
 {
     for(auto p = polygons.begin(); p!= polygons.end(); ++p)
@@ -283,76 +286,9 @@ Web::Ui::DatabaseModel::Survey::~Survey()
     rulerPoints.clear();
 }
 
-DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
-    WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
-    id(ID),
-    name(title),
-    notes(notes)
-{
-    this->selected().connect(std::bind([=](){
-        TREE->viewContainer->clear();
-        TREE->notesContainer->setText(this->notes.data());
-        TREE->buttonsContainer->clear();
-
-        WPushButton *deleteButton = new WPushButton("Delete wound",TREE->buttonsContainer);
-        deleteButton->setIcon(WLink("icons/DatabaseView/Delete.png"));
-        deleteButton->setFloatSide(Side::Left);
-        deleteButton->clicked().connect(std::bind([=](){
-            if(WMessageBox::show(
-                        "Warning",
-                        "Do you really want to delete this wound?",
-                        Yes | No) == Yes)
-            {
-                TREE->viewContainer->clear();
-                TREE->notesContainer->setText("");
-                TREE->buttonsContainer->clear();
-                DatabaseManagerWt::instance()->del(this);
-                delete this;
-            }
-        }));
-
-        WPushButton *editButton = new WPushButton("Edit wound",TREE->buttonsContainer);
-        editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
-        editButton->setFloatSide(Side::Right);
-        editButton->clicked().connect(std::bind([=](){
-            std::string oldName = this->name;
-            std::string oldNotes = this->notes;
-            WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Wound>(
-                        this, "Wound", TREE->viewContainer);
-            d->finished().connect(std::bind([=](WDialog::DialogCode code){
-                if(code != WDialog::Accepted)
-                {
-                    this->name = oldName;
-                    this->notes = oldNotes;
-                    this->label()->setText(this->name.data());
-                }
-                TREE->notesContainer->setText(this->notes.data());
-            },std::placeholders::_1));
-        }));
-
-        WPushButton *addButton = new WPushButton("Add survey",TREE->buttonsContainer);
-        addButton->setIcon(WLink("icons/DatabaseView/Add.png"));
-        addButton->setFloatSide(Side::Right);
-        addButton->clicked().connect(std::bind([=](){
-            DatabaseModel::Survey *survey = DatabaseManagerWt::instance()->add(this);
-            WDialog *d = survey->callSurveyEditDialog(TREE->viewContainer);
-            d->finished().connect(std::bind([=](WDialog::DialogCode code){
-                if(code == WDialog::Accepted)
-                {
-                    this->addChildNode(survey);
-                }
-                else
-                {
-                    DatabaseManagerWt::instance()->del(survey);
-                    delete survey;
-                }
-            },std::placeholders::_1));
-        }));
-    }));
-}
-
-template <class T1> WDialog * Web::Ui::DatabaseModel::callNotesEditDialog(
-        T1 *target,const std::string &title, WObject *parent)
+/// \todo move it to separated class
+template <class T1, class T2> WDialog * Web::Ui::DatabaseModel::callNotesEditDialog(
+        T1 *caller, T2 *target,const std::string &title, bool addToTree, WTextArea *textArea, WObject *parent)
 {
     WDialog *d = new WDialog(parent);
     d->contents()->setMaximumSize(
@@ -396,11 +332,76 @@ template <class T1> WDialog * Web::Ui::DatabaseModel::callNotesEditDialog(
             target->notes = ta->text().toUTF8();
             DatabaseManagerWt::instance()->update(target);
             target->label()->setText(target->name.data());
+            if(addToTree)
+            {
+                caller->addChildNode(target);
+                caller->expand();
+                caller->tree()->select(target);
+            }
+            else
+            {
+                textArea->setText(target->notes.data());
+            }
         }
     },std::placeholders::_1));
 
     d->show();
     return d;
+}
+
+DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
+    WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
+    id(ID),
+    name(title),
+    notes(notes)
+{
+    this->selected().connect(std::bind([=](){
+        TREE->viewContainer->clear();
+        TREE->notesContainer->setText(this->notes.data());
+        TREE->buttonsContainer->clear();
+
+        WPushButton *deleteButton = new WPushButton("Delete wound",TREE->buttonsContainer);
+        deleteButton->setIcon(WLink("icons/DatabaseView/Delete.png"));
+        deleteButton->setFloatSide(Side::Left);
+        deleteButton->clicked().connect(std::bind([=](){
+            if(WMessageBox::show(
+                        "Warning",
+                        "Do you really want to delete this wound?",
+                        Yes | No) == Yes)
+            {
+                DatabaseManagerWt::instance()->del(this);
+                this->tree()->clearSelection();
+                TREE->viewContainer->clear();
+                TREE->notesContainer->setText("");
+                TREE->buttonsContainer->clear();
+                this->parentNode()->removeChildNode(this);
+                delete this;
+            }
+        }));
+
+        WPushButton *editButton = new WPushButton("Edit wound",TREE->buttonsContainer);
+        editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
+        editButton->setFloatSide(Side::Right);
+        editButton->clicked().connect(std::bind([=](){
+            DatabaseModel::callNotesEditDialog<DatabaseModel::Wound,DatabaseModel::Wound>(
+                        nullptr, this, "Wound", false, TREE->notesContainer, TREE->viewContainer);
+        }));
+
+        WPushButton *addButton = new WPushButton("Add survey",TREE->buttonsContainer);
+        addButton->setIcon(WLink("icons/DatabaseView/Add.png"));
+        addButton->setFloatSide(Side::Right);
+        addButton->clicked().connect(std::bind([=](){
+            DatabaseModel::Survey *survey = DatabaseManagerWt::instance()->add(this);
+            WDialog *d = survey->callSurveyEditDialog(TREE->viewContainer,TREE->notesContainer,true,this);
+            d->finished().connect(std::bind([=](WDialog::DialogCode code){
+                if(code != WDialog::Accepted)
+                {
+                    DatabaseManagerWt::instance()->del(survey);
+                    delete survey;
+                }
+            },std::placeholders::_1));
+        }));
+    }));
 }
 
 Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
@@ -423,10 +424,12 @@ Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const stri
                         "Do you really want to delete this patient?",
                         Yes | No) == Yes)
             {
+                DatabaseManagerWt::instance()->del(this);
+                this->tree()->clearSelection();
                 TREE->viewContainer->clear();
                 TREE->notesContainer->setText("");
                 TREE->buttonsContainer->clear();
-                DatabaseManagerWt::instance()->del(this);
+                this->parentNode()->removeChildNode(this);
                 delete this;
             }
         }));
@@ -435,19 +438,8 @@ Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const stri
         editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
         editButton->setFloatSide(Side::Right);
         editButton->clicked().connect(std::bind([=](){
-            std::string oldName = this->name;
-            std::string oldNotes = this->notes;
-            WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Patient>(
-                        this, "Patient", TREE->viewContainer);
-            d->finished().connect(std::bind([=](WDialog::DialogCode code){
-                if(code != WDialog::Accepted)
-                {
-                    this->name = oldName;
-                    this->notes = oldNotes;
-                    this->label()->setText(this->name.data());
-                }
-                TREE->notesContainer->setText(this->notes.data());
-            },std::placeholders::_1));
+            DatabaseModel::callNotesEditDialog<DatabaseModel::Patient, DatabaseModel::Patient>(
+                        nullptr, this, "Patient", false, TREE->notesContainer, TREE->viewContainer);
         }));
 
         WPushButton *addButton = new WPushButton("Add wound",TREE->buttonsContainer);
@@ -455,17 +447,50 @@ Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const stri
         addButton->setFloatSide(Side::Right);
         addButton->clicked().connect(std::bind([=](){
             DatabaseModel::Wound *wound = DatabaseManagerWt::instance()->add(this);
-            WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Wound>(
-                        wound, "Wound", TREE->viewContainer);
+            WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Patient, DatabaseModel::Wound>(
+                        this, wound, "Wound", true, TREE->notesContainer, TREE->viewContainer);
             d->finished().connect(std::bind([=](WDialog::DialogCode code){
-                if(code == WDialog::Accepted)
-                {
-                    this->addChildNode(wound);
-                }
-                else
+                if(code != WDialog::Accepted)
                 {
                     DatabaseManagerWt::instance()->del(wound);
                     delete wound;
+                }
+            },std::placeholders::_1));
+        }));
+    }));
+}
+
+DatabaseModel::Doctor::Doctor(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
+    WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
+    id(ID),
+    name(title),
+    notes(notes)
+{
+    this->selected().connect(std::bind([=](){
+        TREE->viewContainer->clear();
+        TREE->notesContainer->setText(this->notes.data());
+        TREE->buttonsContainer->clear();
+
+        WPushButton *editButton = new WPushButton("Edit doctor",TREE->buttonsContainer);
+        editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
+        editButton->setFloatSide(Side::Right);
+        editButton->clicked().connect(std::bind([=](){
+            DatabaseModel::callNotesEditDialog<DatabaseModel::Doctor, DatabaseModel::Doctor>(
+                        nullptr, this, "Doctor", false, TREE->notesContainer, TREE->viewContainer);
+        }));
+
+        WPushButton *addButton = new WPushButton("Add patient",TREE->buttonsContainer);
+        addButton->setIcon(WLink("icons/DatabaseView/Add.png"));
+        addButton->setFloatSide(Side::Right);
+        addButton->clicked().connect(std::bind([=](){
+            DatabaseModel::Patient *patient = DatabaseManagerWt::instance()->add(this);
+            WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Doctor, DatabaseModel::Patient>(
+                        this, patient, "Wound", true, TREE->notesContainer, TREE->viewContainer);
+            d->finished().connect(std::bind([=](WDialog::DialogCode code){
+                if(code != WDialog::Accepted)
+                {
+                    DatabaseManagerWt::instance()->del(patient);
+                    delete patient;
                 }
             },std::placeholders::_1));
         }));
