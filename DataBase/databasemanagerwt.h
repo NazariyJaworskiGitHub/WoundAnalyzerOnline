@@ -37,9 +37,10 @@ class DatabaseManagerWt : public DatabaseManager
     public : bool update(DatabaseModel::Doctor    *target);
     public : bool update(DatabaseModel::Survey    *target);
 
-    public : DatabaseModel::Patient *add(DatabaseModel::Doctor  *parent);
-    public : DatabaseModel::Wound   *add(DatabaseModel::Patient *parent);
-    public : DatabaseModel::Survey  *add(DatabaseModel::Wound   *parent);
+    public : void add(DatabaseModel::Doctor  *parent, DatabaseModel::Doctor  *newTarget){} //stub
+    public : void add(DatabaseModel::Doctor  *parent, DatabaseModel::Patient *newTarget);
+    public : void add(DatabaseModel::Patient *parent, DatabaseModel::Wound   *newTarget);
+    public : void add(DatabaseModel::Wound   *parent, DatabaseModel::Survey  *newTarget);
 
     public : void del(DatabaseModel::Survey  *target);
     public : void del(DatabaseModel::Wound   *target);

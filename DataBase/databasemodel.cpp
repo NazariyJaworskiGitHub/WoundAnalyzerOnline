@@ -12,6 +12,10 @@
 #include <Wt/WTimeEdit>
 #include <Wt/WLineEdit>
 
+#include <Wt/Chart/WCartesianChart>
+#include <Wt/Chart/WDataSeries>
+#include <Wt/WStandardItemModel>
+
 #include "databasemanagerwt.h"
 #include "configurationparameters.h"
 #include "Web/usersession.h"
@@ -19,10 +23,10 @@
 
 #define TREE (static_cast<Web::Ui::DatabaseModel*>(this->tree()->parent()->parent()))
 
-#define TREE_VIEW_WIDTH 350
-#define RESERVED_HEIGHT 176
+#define TREE_VIEW_WIDTH 350 //random
+#define RESERVED_HEIGHT 224 //browser top + start menu bottom + some reserved
 #define BUTTONS_HEIGHT  48
-#define POPUP_DELTA 64
+#define POPUP_DELTA 64      //random
 
 WImage * Web::Ui::DatabaseModel::Survey::convertFromCVMatToWImage()
 {
@@ -84,6 +88,7 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
     }));
     accept->setFloatSide(Side::Right);
     accept->setStyleClass("btn-primary");
+
     WPushButton *cancel = new WPushButton("Cancel",d->contents());
     cancel->clicked().connect(d,&WDialog::reject);
     cancel->setStyleClass("btn-primary");
@@ -102,7 +107,7 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
                                    te->time().minute(),
                                    te->time().second()));
             this->notes = ta->text().toUTF8();
-            DatabaseManagerWt::instance()->update(this);
+
             this->label()->setText(
                         this->date.toString("dd.MM.yyyy hh:mm").toStdString() + " " +
                         ((this->woundArea > 0) ?
@@ -110,13 +115,39 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
                         ("")));
             if(addToTree)
             {
-                caller->addChildNode(this);
+                DatabaseManagerWt::instance()->add(caller,this);
+                // sort
+                bool inserted = false;
+                for(unsigned i=0; i<caller->childNodes().size(); ++i)
+                    if(((DatabaseModel::Survey*)caller->childNodes()[i])->date>this->date)
+                    {
+                        caller->insertChildNode(i,this);
+                        inserted = true;
+                        break;
+                    }
+                if(!inserted)
+                    caller->addChildNode(this);
                 caller->expand();
                 caller->tree()->select(this);
             }
             else
             {
-                textArea->setText(this->notes.data());
+                DatabaseManagerWt::instance()->update(this);
+                //sort
+                WTreeNode *parentNode = this->parentNode();
+                parentNode->tree()->clearSelection();
+                parentNode->removeChildNode(this);
+                bool inserted = false;
+                for(unsigned i=0; i<parentNode->childNodes().size(); ++i)
+                    if(((DatabaseModel::Survey*)parentNode->childNodes()[i])->date>this->date)
+                    {
+                        parentNode->insertChildNode(i,this);
+                        inserted = true;
+                        break;
+                    }
+                if(!inserted)
+                    parentNode->addChildNode(this);
+                parentNode->tree()->select(this);
             }
         }
     },std::placeholders::_1));
@@ -330,17 +361,43 @@ template <class T1, class T2> WDialog * Web::Ui::DatabaseModel::callNotesEditDia
         {
             target->name = le->text().toUTF8();
             target->notes = ta->text().toUTF8();
-            DatabaseManagerWt::instance()->update(target);
+
             target->label()->setText(target->name.data());
             if(addToTree)
             {
-                caller->addChildNode(target);
+                DatabaseManagerWt::instance()->add(caller,target);
+                // sort
+                bool inserted = false;
+                for(unsigned i=0; i<caller->childNodes().size(); ++i)
+                    if((caller->childNodes()[i])->label()->text()>target->label()->text())
+                    {
+                        caller->insertChildNode(i,target);
+                        inserted = true;
+                        break;
+                    }
+                if(!inserted)
+                    caller->addChildNode(target);
                 caller->expand();
                 caller->tree()->select(target);
             }
             else
             {
-                textArea->setText(target->notes.data());
+                DatabaseManagerWt::instance()->update(target);
+                // sort
+                WTreeNode *parentNode = target->parentNode();
+                parentNode->tree()->clearSelection();
+                parentNode->removeChildNode(target);
+                bool inserted = false;
+                for(unsigned i=0; i<parentNode->childNodes().size(); ++i)
+                    if((parentNode->childNodes()[i])->label()->text() > target->label()->text())
+                    {
+                        parentNode->insertChildNode(i,target);
+                        inserted = true;
+                        break;
+                    }
+                if(!inserted)
+                    parentNode->addChildNode(target);
+                parentNode->tree()->select(target);
             }
         }
     },std::placeholders::_1));
@@ -355,10 +412,50 @@ DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WC
     name(title),
     notes(notes)
 {
+    this->setLoadPolicy(LoadPolicy::NextLevelLoading);
     this->selected().connect(std::bind([=](){
         TREE->viewContainer->clear();
         TREE->notesContainer->setText(this->notes.data());
         TREE->buttonsContainer->clear();
+
+        if(this->childNodes().size()>1)
+        {
+            WStandardItemModel *model = new WStandardItemModel(this->childNodes().size(),2,this);
+            model->setHeaderData(1, Wt::WString("Wounds area (sm2)"));
+            int i=0;
+            for(auto *s : this->childNodes())
+            {
+                WDateTime wdt;
+                wdt.setDate(WDate(
+                                ((DatabaseModel::Survey*)s)->date.date().year(),
+                                ((DatabaseModel::Survey*)s)->date.date().month(),
+                                ((DatabaseModel::Survey*)s)->date.date().day()));
+                wdt.setTime(WTime(
+                                ((DatabaseModel::Survey*)s)->date.time().hour(),
+                                ((DatabaseModel::Survey*)s)->date.time().minute(),
+                                ((DatabaseModel::Survey*)s)->date.time().second()));
+                model->setData(i, 0, wdt);
+                model->setData(i, 1, ((DatabaseModel::Survey*)s)->woundArea);
+                ++i;
+            }
+            Chart::WCartesianChart *chart = new Chart::WCartesianChart(
+                        Chart::ScatterPlot,TREE->viewContainer);
+            chart->setModel(model);
+            chart->setXSeriesColumn(0);
+            chart->setLegendEnabled(true);
+            chart->axis(Chart::Axis::XAxis).setScale(Chart::AxisScale::DateTimeScale);
+            chart->setPlotAreaPadding(160, Side::Right);
+
+            Chart::WDataSeries ser(1,Chart::SeriesType::LineSeries);
+            chart->addSeries(ser);
+            chart->resize(
+                        CURRENT_SESSION->userScreenWidth - TREE_VIEW_WIDTH -POPUP_DELTA,
+                        CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - BUTTONS_HEIGHT*3 -POPUP_DELTA);
+        }
+        else
+        {
+            TREE->viewContainer->addWidget(new WLabel("Add more surveys to see the dynamics"));
+        }
 
         WPushButton *deleteButton = new WPushButton("Delete wound",TREE->buttonsContainer);
         deleteButton->setIcon(WLink("icons/DatabaseView/Delete.png"));
@@ -383,7 +480,7 @@ DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WC
         editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
         editButton->setFloatSide(Side::Right);
         editButton->clicked().connect(std::bind([=](){
-            DatabaseModel::callNotesEditDialog<DatabaseModel::Wound,DatabaseModel::Wound>(
+            DatabaseModel::callNotesEditDialog<DatabaseModel::Patient,DatabaseModel::Wound>(
                         nullptr, this, "Wound", false, TREE->notesContainer, TREE->viewContainer);
         }));
 
@@ -391,14 +488,12 @@ DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WC
         addButton->setIcon(WLink("icons/DatabaseView/Add.png"));
         addButton->setFloatSide(Side::Right);
         addButton->clicked().connect(std::bind([=](){
-            DatabaseModel::Survey *survey = DatabaseManagerWt::instance()->add(this);
+            DatabaseModel::Survey *survey = new DatabaseModel::Survey(
+                        -1, QDateTime::currentDateTime(), "", -1);
             WDialog *d = survey->callSurveyEditDialog(TREE->viewContainer,TREE->notesContainer,true,this);
             d->finished().connect(std::bind([=](WDialog::DialogCode code){
                 if(code != WDialog::Accepted)
-                {
-                    DatabaseManagerWt::instance()->del(survey);
                     delete survey;
-                }
             },std::placeholders::_1));
         }));
     }));
@@ -438,7 +533,7 @@ Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const stri
         editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
         editButton->setFloatSide(Side::Right);
         editButton->clicked().connect(std::bind([=](){
-            DatabaseModel::callNotesEditDialog<DatabaseModel::Patient, DatabaseModel::Patient>(
+            DatabaseModel::callNotesEditDialog<DatabaseModel::Doctor, DatabaseModel::Patient>(
                         nullptr, this, "Patient", false, TREE->notesContainer, TREE->viewContainer);
         }));
 
@@ -446,15 +541,12 @@ Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const stri
         addButton->setIcon(WLink("icons/DatabaseView/Add.png"));
         addButton->setFloatSide(Side::Right);
         addButton->clicked().connect(std::bind([=](){
-            DatabaseModel::Wound *wound = DatabaseManagerWt::instance()->add(this);
+            DatabaseModel::Wound *wound = new DatabaseModel::Wound(-1, "New wound", "");
             WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Patient, DatabaseModel::Wound>(
                         this, wound, "Wound", true, TREE->notesContainer, TREE->viewContainer);
             d->finished().connect(std::bind([=](WDialog::DialogCode code){
                 if(code != WDialog::Accepted)
-                {
-                    DatabaseManagerWt::instance()->del(wound);
                     delete wound;
-                }
             },std::placeholders::_1));
         }));
     }));
@@ -483,15 +575,12 @@ DatabaseModel::Doctor::Doctor(int ID, const string &title, const string &notes, 
         addButton->setIcon(WLink("icons/DatabaseView/Add.png"));
         addButton->setFloatSide(Side::Right);
         addButton->clicked().connect(std::bind([=](){
-            DatabaseModel::Patient *patient = DatabaseManagerWt::instance()->add(this);
+            DatabaseModel::Patient *patient = new DatabaseModel::Patient(-1,"New patient","");
             WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Doctor, DatabaseModel::Patient>(
                         this, patient, "Wound", true, TREE->notesContainer, TREE->viewContainer);
             d->finished().connect(std::bind([=](WDialog::DialogCode code){
                 if(code != WDialog::Accepted)
-                {
-                    DatabaseManagerWt::instance()->del(patient);
                     delete patient;
-                }
             },std::placeholders::_1));
         }));
     }));

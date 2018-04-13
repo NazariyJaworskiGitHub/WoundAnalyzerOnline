@@ -43,7 +43,7 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
     {
         QSqlQuery doctorsQuery(QSqlDatabase::database(DATABASENAME));
         Log::GlobalLogger.msg(Log::TRACE, "[Database] searching id of <" + CURRENT_SESSION->currentUser->username + ">\n");
-        str = ("SELECT ID, DoctorName, Notes FROM Doctors WHERE Login = '" + CURRENT_SESSION->currentUser->username + "'").data();
+        str = ("SELECT ID, DoctorName, Notes FROM Doctors WHERE Login = '" + CURRENT_SESSION->currentUser->username + "';").data();
         if(doctorsQuery.exec(str))
             Log::GlobalLogger.msg(Log::TRACE, "[Database] id found\n");
         else
@@ -65,7 +65,7 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
     {
         QSqlQuery patientsQuery(QSqlDatabase::database(DATABASENAME));
         Log::GlobalLogger.msg(Log::TRACE, "[Database] loading patients of <" + CURRENT_SESSION->currentUser->username + ">\n");
-        str = "SELECT ID, PatientName, Notes FROM Patients WHERE DoctorID = " + QString::number(DBmodel->doctor->id);
+        str = "SELECT ID, PatientName, Notes FROM Patients WHERE DoctorID = " + QString::number(DBmodel->doctor->id) + " ORDER BY PatientName ASC;";
         if(patientsQuery.exec(str))
             Log::GlobalLogger.msg(Log::TRACE, "[Database] patients are loaded\n");
         else
@@ -87,7 +87,7 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
             {
                 QSqlQuery woundsQuery(QSqlDatabase::database(DATABASENAME));
                 Log::GlobalLogger.msg(Log::TRACE, "[Database] loading wounds of <" + patient->name + ">\n");
-                str = "SELECT ID, WoundName, Notes FROM Wounds WHERE PatientID = " + QString::number(patient->id);
+                str = "SELECT ID, WoundName, Notes FROM Wounds WHERE PatientID = " + QString::number(patient->id) + " ORDER BY WoundName ASC;";
                 if(woundsQuery.exec(str))
                     Log::GlobalLogger.msg(Log::TRACE, "[Database] wounds are loaded\n");
                 else
@@ -108,7 +108,7 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
                     {
                         QSqlQuery surveyQuery(QSqlDatabase::database(DATABASENAME));
                         Log::GlobalLogger.msg(Log::TRACE, "[Database] loading surveys of <" + wound->name + ">\n");
-                        str = "SELECT ID, SurveyDate, Notes, WoundArea FROM Surveys WHERE WoundID = " + QString::number(wound->id);
+                        str = "SELECT ID, SurveyDate, Notes, WoundArea FROM Surveys WHERE WoundID = " + QString::number(wound->id) + " ORDER BY SurveyDate ASC;";
                         if(surveyQuery.exec(str))
                             Log::GlobalLogger.msg(Log::TRACE, "[Database] surveys are loaded\n");
                         else
@@ -125,7 +125,7 @@ DatabaseModel* DatabaseManagerWt::prepareDatabaseModel(WContainerWidget *parent)
                                         surveyQuery.value(record.indexOf("SurveyDate")).toDateTime(),
                                         surveyQuery.value(record.indexOf("Notes")).toString().toStdString(),
                                         surveyQuery.value(record.indexOf("WoundArea")).toDouble());
-                            wound->addChildNode(survey);
+                                wound->addChildNode(survey);
                         }
                     }
                     ///////////////////////////////////////////////////////////////////////
@@ -147,7 +147,7 @@ bool DatabaseManagerWt::loadSurveyWoundImage(DatabaseModel::Survey *target) cons
     QString str;
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::TRACE, "[Database] loading survey wound image of <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
-    str = "SELECT Image, Polygons, RulerPoints, RulerFactor FROM Surveys WHERE ID = " + QString::number(target->id);
+    str = "SELECT Image, Polygons, RulerPoints, RulerFactor FROM Surveys WHERE ID = " + QString::number(target->id) +";";
     if(query.exec(str))
         Log::GlobalLogger.msg(Log::TRACE, "[Database] survey wound image is loaded\n");
     else
@@ -183,7 +183,7 @@ bool DatabaseManagerWt::_updateUtil(
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::TRACE, "[Database] updating <" + param + "> <" + name + ">\n");
     query.prepare(("UPDATE " + param + "s SET " + param + "Name = '" + name +
-                  "', Notes = :notes WHERE ID = ").data() + QString::number(id));
+                  "', Notes = :notes WHERE ID = ").data() + QString::number(id) + ";");
     query.bindValue(":notes", notes.data());
     if(query.exec())
         Log::GlobalLogger.msg(Log::TRACE, "[Database] <" + param + "> is updated \n");
@@ -225,7 +225,7 @@ bool DatabaseManagerWt::update(DatabaseModel::Survey *target)
             "RulerPoints = :rulerPoints, "
             "RulerFactor = " + QString::number(target->rulerFactor) + ", "
             "WoundArea = " + QString::number(target->woundArea) + " "
-            "WHERE ID = " + QString::number(target->id));
+            "WHERE ID = " + QString::number(target->id) + ";");
     query.bindValue(":notes", target->notes.data());
     query.bindValue(":imageData", QByteArray(reinterpret_cast<const char*>(v.data()),v.size()));
     query.bindValue(":polygonsData", target->packPolygons());
@@ -240,11 +240,12 @@ bool DatabaseManagerWt::update(DatabaseModel::Survey *target)
     return true;
 }
 
-DatabaseModel::Patient * DatabaseManagerWt::add(DatabaseModel::Doctor *parent)
+void DatabaseManagerWt::add(
+        DatabaseModel::Doctor *parent,
+        DatabaseModel::Patient *newTarget)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::TRACE, "[Database] adding new patient to doctor <" + parent->name + ">\n");
-    DatabaseModel::Patient *newTarget = new DatabaseModel::Patient(-1,"New patient","");
     query.prepare(
                 "INSERT INTO Patients (DoctorID, PatientName)"
                 "VALUES ('" + QString::number(parent->id) + "','New patient');");
@@ -253,17 +254,17 @@ DatabaseModel::Patient * DatabaseManagerWt::add(DatabaseModel::Doctor *parent)
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
-        return nullptr;
+        return;
     }
     newTarget->id = query.lastInsertId().toInt();
-    return newTarget;
 }
 
-DatabaseModel::Wound *DatabaseManagerWt::add(DatabaseModel::Patient *parent)
+void DatabaseManagerWt::add(
+        DatabaseModel::Patient *parent,
+        DatabaseModel::Wound   *newTarget)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::TRACE, "[Database] adding new wound to patient <" + parent->name + ">\n");
-    DatabaseModel::Wound *newTarget = new DatabaseModel::Wound(-1, "New wound", "");
     query.prepare(
                 "INSERT INTO Wounds (PatientID, WoundName)"
                 "VALUES ('" + QString::number(parent->id) + "','New wound');");
@@ -272,35 +273,41 @@ DatabaseModel::Wound *DatabaseManagerWt::add(DatabaseModel::Patient *parent)
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
-        return nullptr;
+        return;
     }
     newTarget->id = query.lastInsertId().toInt();
-    return newTarget;
 }
 
-DatabaseModel::Survey *DatabaseManagerWt::add(DatabaseModel::Wound *parent/*, const cv::Mat &image*/)
+void DatabaseManagerWt::add(
+        DatabaseModel::Wound *parent,
+        DatabaseModel::Survey *newTarget)
 {
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::TRACE, "[Database] adding new survey to wound <" + parent->name + ">\n");
-    DatabaseModel::Survey *newTarget = new DatabaseModel::Survey(
-                -1, QDateTime::currentDateTime(), "", -1);
-//    newTarget->image = image.clone();
     query.prepare(
-                "INSERT INTO Surveys (WoundID, SurveyDate, Image)"
-                "VALUES ('" + QString::number(parent->id) + "','" +
-                newTarget->date.toString("yyyy-MM-dd hh:mm:ss") + "',:imageData);");
+            "INSERT INTO Surveys SET "
+            "WoundID = "+ QString::number(parent->id) + ", " +
+            "SurveyDate = '" + newTarget->date.toString("yyyy-MM-dd hh:mm:ss") + "', "
+            "Notes = :notes, "
+            "Image = :imageData, "
+            "Polygons = :polygonsData, "
+            "RulerPoints = :rulerPoints, "
+            "RulerFactor = " + QString::number(newTarget->rulerFactor) + ", "
+            "WoundArea = " + QString::number(newTarget->woundArea) + ";") ;
     std::vector<unsigned char> v;
-//    cv::imencode(".jpg", newTarget->image.clone(), v);
+    cv::imencode(".jpg", newTarget->image.clone(), v);
+    query.bindValue(":notes", newTarget->notes.data());
     query.bindValue(":imageData", QByteArray(reinterpret_cast<const char*>(v.data()),v.size()));
+    query.bindValue(":polygonsData", newTarget->packPolygons());
+    query.bindValue(":rulerPoints", newTarget->packRulerPoints());
     if(query.exec())
         Log::GlobalLogger.msg(Log::TRACE, "[Database] new survey is added \n");
     else
     {
         Log::GlobalLogger.msg(Log::ERROR, "[Database] Error: " + query.lastError().text().toStdString() + "\n");
-        return nullptr;
+        return;
     }
     newTarget->id = query.lastInsertId().toInt();
-    return newTarget;
 }
 
 void DatabaseManagerWt::del(DatabaseModel::Survey *target)

@@ -58,13 +58,13 @@ class MainWindow : public WContainerWidget
     void _showLogInPushButton()
     {
         logInOutPushButton->setIcon(WLink("icons/Navigation/Log-In.png"));
-        logInOutPushButton->setToolTip("Log in");
+        logInOutPushButton->setText("Log in");
     }
 
     public :void _showLogOutPushButton()
     {
         logInOutPushButton->setIcon(WLink("icons/Navigation/Log-Out.png"));
-        logInOutPushButton->setToolTip("Log Out");
+        logInOutPushButton->setText("Log out");
     }
 
     MainWindow(WContainerWidget *parent) : WContainerWidget(parent)
@@ -81,7 +81,7 @@ class MainWindow : public WContainerWidget
 //        _showIntroPushButton();
 //        navigationBar->addWidget(intoPushButton, AlignLeft);
 
-        logInOutPushButton = new WPushButton(this);
+        logInOutPushButton = new WPushButton("Log in", this);
         logInOutPushButton->clicked().connect(std::bind([=](){
             if(_logInOutState)
             {
