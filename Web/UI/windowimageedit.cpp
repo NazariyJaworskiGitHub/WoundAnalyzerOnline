@@ -259,13 +259,13 @@ void Web::Ui::WindowImageEdit::_onLoadPrepareZoomSlider()
 {
     _myWSliderZoom->setMinimum(ZOOM_MIN);
     _myWSliderZoom->setMaximum(ZOOM_MAX);
-    _myWSliderZoom->valueChanged().connect(this,&WindowImageEdit::_changeZoom);
+    _myWSliderZoom->valueChanged().connect(this,&WindowImageEdit::changeZoom);
     _myWSliderZoom->setValue(ZOOM_INIT);
     _myZoomInButton->clicked().connect(std::bind([=] () {
-        _changeZoom(_myWSliderZoom->value() + ZOOM_BUTTON_STEP);
+        changeZoom(_myWSliderZoom->value() + ZOOM_BUTTON_STEP);
     }));
     _myZoomOutButton->clicked().connect(std::bind([=] () {
-        _changeZoom(_myWSliderZoom->value() - ZOOM_BUTTON_STEP);
+        changeZoom(_myWSliderZoom->value() - ZOOM_BUTTON_STEP);
     }));
 }
 
@@ -319,7 +319,7 @@ void Web::Ui::WindowImageEdit::_enableUI()
     _myRulerFactorSpinBox->enable();
 }
 
-void Web::Ui::WindowImageEdit::_changeZoom(int value)
+void Web::Ui::WindowImageEdit::changeZoom(int value)
 {
     // slider has automatic min/max control
     _myWSliderZoom->setValue(value);

@@ -146,7 +146,7 @@ class WindowImageEdit : public WContainerWidget
 
     private: void _enableUI();
 
-    private: void _changeZoom(int value);
+    public : void changeZoom(int value); //public for database pre-saving zoom reset
 
     private: void _onLoadPrepareTransparencySlider();
 

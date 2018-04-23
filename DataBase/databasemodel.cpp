@@ -97,6 +97,7 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
     d->finished().connect(std::bind([=](WDialog::DialogCode code){
         if(code == WDialog::Accepted)
         {
+            w->changeZoom(100);
             w->copyAllDataTo(image,polygons,rulerPoints,woundArea,rulerFactor);
             this->date.setDate(QDate(
                                    de->date().year(),
