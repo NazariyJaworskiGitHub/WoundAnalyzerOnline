@@ -147,7 +147,7 @@ bool DatabaseManagerWt::loadSurveyWoundImage(DatabaseModel::Survey *target) cons
     QString str;
     QSqlQuery query(QSqlDatabase::database(DATABASENAME));
     Log::GlobalLogger.msg(Log::TRACE, "[Database] loading survey wound image of <" + target->date.toString("dd.MM.yyyy hh:mm").toStdString() + ">\n");
-    str = "SELECT Image, Polygons, RulerPoints, RulerFactor FROM Surveys WHERE ID = " + QString::number(target->id) +";";
+    str = "SELECT Image, Polygons, RulerPoints, RulerFactor, Zoom FROM Surveys WHERE ID = " + QString::number(target->id) +";";
     if(query.exec(str))
         Log::GlobalLogger.msg(Log::TRACE, "[Database] survey wound image is loaded\n");
     else
@@ -171,6 +171,7 @@ bool DatabaseManagerWt::loadSurveyWoundImage(DatabaseModel::Survey *target) cons
     target->unpackPolygons(query.value(record.indexOf("Polygons")).toByteArray());
     target->unpackRulerPoints(query.value(record.indexOf("RulerPoints")).toByteArray());
     target->rulerFactor = query.value(record.indexOf("RulerFactor")).toDouble();
+    target->zoom = query.value(record.indexOf("Zoom")).toDouble();
     return true;
 }
 
@@ -224,7 +225,8 @@ bool DatabaseManagerWt::update(DatabaseModel::Survey *target)
             "Polygons = :polygonsData, "
             "RulerPoints = :rulerPoints, "
             "RulerFactor = " + QString::number(target->rulerFactor) + ", "
-            "WoundArea = " + QString::number(target->woundArea) + " "
+            "WoundArea = " + QString::number(target->woundArea) + ", "
+            "Zoom = " + QString::number(target->zoom) + " "
             "WHERE ID = " + QString::number(target->id) + ";");
     query.bindValue(":notes", target->notes.data());
     query.bindValue(":imageData", QByteArray(reinterpret_cast<const char*>(v.data()),v.size()));
@@ -293,7 +295,8 @@ void DatabaseManagerWt::add(
             "Polygons = :polygonsData, "
             "RulerPoints = :rulerPoints, "
             "RulerFactor = " + QString::number(newTarget->rulerFactor) + ", "
-            "WoundArea = " + QString::number(newTarget->woundArea) + ";") ;
+            "WoundArea = " + QString::number(newTarget->woundArea) + ", "
+            "Zoom = " + QString::number(newTarget->zoom) + ";") ;
     std::vector<unsigned char> v;
     cv::imencode(".jpg", newTarget->image.clone(), v);
     query.bindValue(":notes", newTarget->notes.data());

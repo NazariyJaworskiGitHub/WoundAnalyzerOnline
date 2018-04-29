@@ -534,7 +534,7 @@ void Web::Ui::WindowImageEdit::_initializeMouseControl()
     _myWImage->mouseDragged().connect(this, &WindowImageEdit::_onMouseDraggedEvent);
 }
 
-void Web::Ui::WindowImageEdit::copyAllDataTo(Mat &img, std::vector<PolygonF> &pols, PolygonF &pol, double &a, double &rf) const
+void Web::Ui::WindowImageEdit::copyAllDataTo(Mat &img, std::vector<PolygonF> &pols, PolygonF &pol, double &a, double &rf, double &z) const
 {
     img = this->_myImageManagerWt->getImage().clone();
     for(auto p = pols.begin(); p!= pols.end(); ++p)
@@ -552,9 +552,10 @@ void Web::Ui::WindowImageEdit::copyAllDataTo(Mat &img, std::vector<PolygonF> &po
         pol.push_back(Point2d(n->x,n->y));
     a = woundsArea;
     rf = this->_myImageManagerWt->getRulerFactor();
+    z = this->_myWSliderZoom->value();
 }
 
-void Web::Ui::WindowImageEdit::copyAllDataFrom(const Mat &img, const std::vector<PolygonF> &pols, const PolygonF &pol, const double &a, const double &rf)
+void Web::Ui::WindowImageEdit::copyAllDataFrom(const Mat &img, const std::vector<PolygonF> &pols, const PolygonF &pol, const double &a, const double &rf, const double &z)
 {
     for(auto p = polygons.begin(); p!= polygons.end(); ++p)
         p->clear();
@@ -566,17 +567,24 @@ void Web::Ui::WindowImageEdit::copyAllDataFrom(const Mat &img, const std::vector
             newP.push_back(Point2d(n->x,n->y));
         polygons.push_back(newP);
     }
+
     rulerPoints.clear();
     for(auto n = pol.begin(); n!= pol.end(); ++n)
         rulerPoints.push_back(Point2d(n->x,n->y));
-    woundsArea = a;
+
     this->_myImageManagerWt->openImage(img);
+    woundsArea = a;
     this->_myImageManagerWt->setRulerFactor(rf);    //it should be after opening
     this->_myRulerFactorSpinBox->setValue(rf);
-    redrawWImage();
+    _myWSliderZoom->setValue(z);
+    _myWSliderZoomText->setText(_myWSliderZoom->valueText() + "%");
     _myWImage->show();
     if(_myImageManagerWt->isImageOpened())
+    {
+        _myImageManagerWt->zoom(_myWSliderZoom->value());
+        redrawWImage();
         _enableUI();
+    }
 }
 
 Web::Ui::WindowImageEdit::WindowImageEdit(WContainerWidget *parent) : WContainerWidget(parent)

@@ -45,17 +45,16 @@ WImage * Web::Ui::DatabaseModel::Survey::convertFromCVMatToWImage()
 /// \todo move it to separated class
 WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
         WObject *parent,
-        WTextArea *textArea,
         bool addToTree,
         DatabaseModel::Wound *caller)
 {
     WDialog *d = new WDialog(parent);
     d->contents()->setMaximumSize(
                 CURRENT_SESSION->userScreenWidth - POPUP_DELTA,
-                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - POPUP_DELTA);
+                CURRENT_SESSION->userScreenHeight - 2*POPUP_DELTA);
     d->contents()->resize(
                 CURRENT_SESSION->userScreenWidth - POPUP_DELTA,
-                CURRENT_SESSION->userScreenHeight - RESERVED_HEIGHT - POPUP_DELTA);
+                CURRENT_SESSION->userScreenHeight - 2*POPUP_DELTA);
 
     WDateEdit *de = new WDateEdit(d->contents());
     de->setDate(WDate(
@@ -70,7 +69,7 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
     d->contents()->addWidget(new WBreak());
 
     WindowImageEdit *w = new WindowImageEdit(d->contents());
-    w->copyAllDataFrom(image,polygons,rulerPoints,woundArea,rulerFactor);
+    w->copyAllDataFrom(image,polygons,rulerPoints,woundArea,rulerFactor,zoom);
     d->contents()->addWidget(new WBreak());
 
     WTextArea *ta = new WTextArea(d->contents());
@@ -97,8 +96,7 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
     d->finished().connect(std::bind([=](WDialog::DialogCode code){
         if(code == WDialog::Accepted)
         {
-            w->changeZoom(100);
-            w->copyAllDataTo(image,polygons,rulerPoints,woundArea,rulerFactor);
+            w->copyAllDataTo(image,polygons,rulerPoints,woundArea,rulerFactor,zoom);
             this->date.setDate(QDate(
                                    de->date().year(),
                                    de->date().month(),
@@ -107,7 +105,7 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
                                    te->time().hour(),
                                    te->time().minute(),
                                    te->time().second()));
-            this->notes = ta->text().toUTF8();
+            this->notes = ta->text().narrow();
 
             this->label()->setText(
                         this->date.toString("dd.MM.yyyy hh:mm").toStdString() + " " +
@@ -208,7 +206,7 @@ Web::Ui::DatabaseModel::Survey::Survey(
         editButton->setIcon(WLink("icons/DatabaseView/Edit.png"));
         editButton->setFloatSide(Side::Right);
         editButton->clicked().connect(std::bind([=](){
-            callSurveyEditDialog(TREE->viewContainer,TREE->notesContainer,false,nullptr);
+            callSurveyEditDialog(TREE->viewContainer,false,nullptr);
             TREE->viewContainer->clear();
             TREE->viewContainer->addWidget(convertFromCVMatToWImage());
         }));
@@ -320,7 +318,7 @@ Web::Ui::DatabaseModel::Survey::~Survey()
 
 /// \todo move it to separated class
 template <class T1, class T2> WDialog * Web::Ui::DatabaseModel::callNotesEditDialog(
-        T1 *caller, T2 *target,const std::string &title, bool addToTree, WTextArea *textArea, WObject *parent)
+        T1 *caller, T2 *target,const std::string &title, bool addToTree, WObject *parent)
 {
     WDialog *d = new WDialog(parent);
     d->contents()->setMaximumSize(
@@ -360,8 +358,8 @@ template <class T1, class T2> WDialog * Web::Ui::DatabaseModel::callNotesEditDia
     d->finished().connect(std::bind([=](WDialog::DialogCode code){
         if(code == WDialog::Accepted)
         {
-            target->name = le->text().toUTF8();
-            target->notes = ta->text().toUTF8();
+            target->name = le->text().narrow();
+            target->notes = ta->text().narrow();
 
             target->label()->setText(target->name.data());
             if(addToTree)
@@ -482,7 +480,7 @@ DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WC
         editButton->setFloatSide(Side::Right);
         editButton->clicked().connect(std::bind([=](){
             DatabaseModel::callNotesEditDialog<DatabaseModel::Patient,DatabaseModel::Wound>(
-                        nullptr, this, "Wound", false, TREE->notesContainer, TREE->viewContainer);
+                        nullptr, this, "Wound", false, TREE->viewContainer);
         }));
 
         WPushButton *addButton = new WPushButton("Add survey",TREE->buttonsContainer);
@@ -491,7 +489,7 @@ DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WC
         addButton->clicked().connect(std::bind([=](){
             DatabaseModel::Survey *survey = new DatabaseModel::Survey(
                         -1, QDateTime::currentDateTime(), "", -1);
-            WDialog *d = survey->callSurveyEditDialog(TREE->viewContainer,TREE->notesContainer,true,this);
+            WDialog *d = survey->callSurveyEditDialog(TREE->viewContainer,true,this);
             d->finished().connect(std::bind([=](WDialog::DialogCode code){
                 if(code != WDialog::Accepted)
                     delete survey;
@@ -535,7 +533,7 @@ Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const stri
         editButton->setFloatSide(Side::Right);
         editButton->clicked().connect(std::bind([=](){
             DatabaseModel::callNotesEditDialog<DatabaseModel::Doctor, DatabaseModel::Patient>(
-                        nullptr, this, "Patient", false, TREE->notesContainer, TREE->viewContainer);
+                        nullptr, this, "Patient", false, TREE->viewContainer);
         }));
 
         WPushButton *addButton = new WPushButton("Add wound",TREE->buttonsContainer);
@@ -544,7 +542,7 @@ Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const stri
         addButton->clicked().connect(std::bind([=](){
             DatabaseModel::Wound *wound = new DatabaseModel::Wound(-1, "New wound", "");
             WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Patient, DatabaseModel::Wound>(
-                        this, wound, "Wound", true, TREE->notesContainer, TREE->viewContainer);
+                        this, wound, "Wound", true, TREE->viewContainer);
             d->finished().connect(std::bind([=](WDialog::DialogCode code){
                 if(code != WDialog::Accepted)
                     delete wound;
@@ -569,7 +567,7 @@ DatabaseModel::Doctor::Doctor(int ID, const string &title, const string &notes, 
         editButton->setFloatSide(Side::Right);
         editButton->clicked().connect(std::bind([=](){
             DatabaseModel::callNotesEditDialog<DatabaseModel::Doctor, DatabaseModel::Doctor>(
-                        nullptr, this, "Doctor", false, TREE->notesContainer, TREE->viewContainer);
+                        nullptr, this, "Doctor", false, TREE->viewContainer);
         }));
 
         WPushButton *addButton = new WPushButton("Add patient",TREE->buttonsContainer);
@@ -578,7 +576,7 @@ DatabaseModel::Doctor::Doctor(int ID, const string &title, const string &notes, 
         addButton->clicked().connect(std::bind([=](){
             DatabaseModel::Patient *patient = new DatabaseModel::Patient(-1,"New patient","");
             WDialog *d = DatabaseModel::callNotesEditDialog<DatabaseModel::Doctor, DatabaseModel::Patient>(
-                        this, patient, "Wound", true, TREE->notesContainer, TREE->viewContainer);
+                        this, patient, "Wound", true, TREE->viewContainer);
             d->finished().connect(std::bind([=](WDialog::DialogCode code){
                 if(code != WDialog::Accepted)
                     delete patient;

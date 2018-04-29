@@ -79,6 +79,7 @@ class DatabaseModel : public WContainerWidget
         public : PolygonF rulerPoints;
         public : double rulerFactor = 1.0;
         public : double woundArea = -1;
+        public : double zoom = 100;
         public : Survey(int ID,
                 const QDateTime &date,
                 const std::string &notes,
@@ -91,7 +92,7 @@ class DatabaseModel : public WContainerWidget
         public : void unpackRulerPoints(QByteArray buf);
         public :~Survey();
         WImage * convertFromCVMatToWImage();
-        WDialog *callSurveyEditDialog(WObject *parent, WTextArea *textArea, bool addToTree, Wound *caller);
+        WDialog *callSurveyEditDialog(WObject *parent, bool addToTree, Wound *caller);
     };
 
     public : template <class T1, class T2> static WDialog *callNotesEditDialog(
@@ -99,7 +100,6 @@ class DatabaseModel : public WContainerWidget
             T2 *target,
             const std::string &title,
             bool addToTree,
-            WTextArea *textArea,
             WObject *parent);
 
     public : WTree *tree = nullptr;

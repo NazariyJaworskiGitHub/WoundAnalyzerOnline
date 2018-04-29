@@ -15,6 +15,8 @@ namespace Log
 
 int main(int argc, char *argv[])
 {
+    //std::setlocale(LC_ALL, "");
+
     QCoreApplication _app(argc, argv);
 
     // Read configuration

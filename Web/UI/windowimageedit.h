@@ -173,14 +173,16 @@ class WindowImageEdit : public WContainerWidget
             std::vector<PolygonF> &pols,
             PolygonF &pol,
             double &a,
-            double &rf) const;
+            double &rf,
+            double &z) const;
 
     public : void copyAllDataFrom(
-        const cv::Mat &img,
-        const std::vector<PolygonF> &pols,
-        const PolygonF &pol,
-        const double &a,
-        const double &rf);
+            const cv::Mat &img,
+            const std::vector<PolygonF> &pols,
+            const PolygonF &pol,
+            const double &a,
+            const double &rf,
+            const double &z);
 
     public: WindowImageEdit(WContainerWidget *parent);
     public : ~WindowImageEdit();
