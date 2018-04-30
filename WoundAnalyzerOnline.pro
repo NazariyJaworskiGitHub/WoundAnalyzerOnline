@@ -1,9 +1,7 @@
 CONFIG += c++11
 CONFIG += console
 
-#QT += core
-#QT += gui
-#QT += printsupport
+QT += printsupport
 QT += sql
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -59,7 +57,6 @@ HEADERS  += Utilities/Logger/logger.h \
     Web/UI/windowpatient.h \
     Image/imagemanager.h \
     Utilities/mathutilities.h \
-    Image/imagemanagerqt.h \
     Image/imagemanagerwt.h \
     Web/UI/windowimageedit.h \
     Web/UI/dialogprogressbar.h \

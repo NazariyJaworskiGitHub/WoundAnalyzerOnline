@@ -63,6 +63,7 @@ class WindowImageEdit : public WContainerWidget
 {
     private:
     ImageManagerWt  *_myImageManagerWt          = nullptr;
+    public : const ImageManagerWt* getImageManagerWt() const {return _myImageManagerWt;}
 
     WTable          *_myWTable                  = nullptr;
 

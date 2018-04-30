@@ -4,7 +4,7 @@
 #include "Web/webserver.h"
 #include "DataBase/databasemanagerwt.h"
 
-#include <QCoreApplication>
+#include <QApplication>
 
 namespace Log
 {
@@ -15,9 +15,7 @@ namespace Log
 
 int main(int argc, char *argv[])
 {
-    //std::setlocale(LC_ALL, "");
-
-    QCoreApplication _app(argc, argv);
+    QApplication _app(argc, argv);
 
     // Read configuration
     Log::GlobalLogger.msg(Log::INFO, "[Global logger] Reading configuration parameters\n");

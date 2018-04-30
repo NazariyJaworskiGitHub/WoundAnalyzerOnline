@@ -155,14 +155,17 @@ double ImageManager::drawRuler(
 Mat ImageManager::getBlendedLayers() const
 {
     Mat _result;
-    cv::resize(_myImage,_result,cv::Size(),_zoomFactor,_zoomFactor);
-    addWeighted(
-                _result,
-                _drawingLayerTransparency,
-                _myDrawingLayer,
-                1.0 - _drawingLayerTransparency,
-                0.0,
-                _result);
+    if(!_myImage.empty())
+    {
+        cv::resize(_myImage,_result,cv::Size(),_zoomFactor,_zoomFactor);
+        addWeighted(
+                    _result,
+                    _drawingLayerTransparency,
+                    _myDrawingLayer,
+                    1.0 - _drawingLayerTransparency,
+                    0.0,
+                    _result);
+    }
     return _result;
 }
 

@@ -21,6 +21,13 @@
 #include "Web/usersession.h"
 #include "Web/UI/windowimageedit.h"
 
+#include <Wt/WAnchor>
+#include <Wt/WFileResource>
+#include <QtPrintSupport/QPrinter>
+#include <QTextDocument>
+#include <QTextCursor>
+#include <QDesktopServices>
+
 #define TREE (static_cast<Web::Ui::DatabaseModel*>(this->tree()->parent()->parent()))
 
 #define TREE_VIEW_WIDTH 350 //random
@@ -66,6 +73,11 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
                     this->date.time().hour(),
                     this->date.time().minute(),
                     this->date.time().second()));
+
+    WPushButton *exportPdfButton = new WPushButton("Export PDF", d->contents());
+    exportPdfButton->setIcon(WLink("icons/Export.png"));
+    exportPdfButton->setFloatSide(Side::Right);
+
     d->contents()->addWidget(new WBreak());
 
     WindowImageEdit *w = new WindowImageEdit(d->contents());
@@ -73,9 +85,71 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
     d->contents()->addWidget(new WBreak());
 
     WTextArea *ta = new WTextArea(d->contents());
-    ta->setText(this->notes.data());
+    ta->setText(Wt::WString(this->notes,CharEncoding::UTF8));
     ta->resize(WindowImageEdit_WIDTH, POPUP_DELTA*2);
     d->contents()->addWidget(new WBreak());
+
+    exportPdfButton->clicked().connect(std::bind([=]()
+    {
+        QDateTime dt;
+        dt.setDate(QDate(de->date().year(),de->date().month(),de->date().day()));
+        dt.setTime(QTime(te->time().hour(),te->time().minute(),te->time().second()));
+        Log::GlobalLogger.msg(
+                    Log::TRACE,
+                    "[Export PDF] creating PDF export file for survey <" +
+                    dt.toString("dd.MM.yyyy hh:mm").toStdString() +
+                    de->date().toString().toUTF8() +
+                    ">\n");
+        std::string url =
+                    "pdfReports/" +
+                    dt.toString("dd.MM.yyyy hh.mm").toStdString() +
+                    ".pdf";
+        QFile qfile(url.data());
+        if(qfile.exists())
+            qfile.remove();
+        QPrinter printer(QPrinter::HighResolution);
+        printer.setOutputFormat(QPrinter::PdfFormat);
+        printer.setPaperSize(QPrinter::A4);
+        printer.setOutputFileName(url.data());
+        QTextDocument doc;
+        QTextCursor cursor(&doc);
+        if(!addToTree)
+        {
+            cursor.insertHtml(
+                        "<br><p><b>Patient: </b> " +
+                        QString(((DatabaseModel::Patient*)this->parentNode()->parentNode())->name.data()) +
+                        "</p>");
+            cursor.insertHtml(
+                        "<br><p><b>Wound: </b> " +
+                        QString(((DatabaseModel::Wound*)this->parentNode())->name.data()) +
+                        "</p>");
+        }
+        cursor.insertHtml(
+                    "<br><h1><center>Wound Survey Report [" +
+                    dt.toString("dd.MM.yyyy hh:mm") +
+                    "]</<center></h1>");
+        if(w->getImageManagerWt()->isImageOpened())
+        {
+            cursor.insertImage(ImageManagerWt::Mat2QImage(w->getImageManagerWt()->getBlendedLayers()).scaled(
+                                   printer.pageRect(QPrinter::Point).size().width(),
+                                   printer.pageRect(QPrinter::Point).size().width(),
+                                   Qt::KeepAspectRatio));
+            cursor.insertHtml(
+                        "<br><p><b>Total wound area: </b> " +
+                        QString::number(w->woundsArea) +
+                        " sm<sup>2</sup>" +
+                        "</p>");
+        }
+        cursor.insertHtml(
+                    "<br><p><b>Notes: </b> " +
+                    QString(ta->text().toUTF8().data()) +
+                    "</p>");
+        doc.print(&printer);
+
+        WAnchor *a = new WAnchor(WLink(url.data()),d->contents());
+        a->setTarget(AnchorTarget::TargetNewWindow);
+        d->contents()->doJavaScript(a->jsRef()+".click();");
+    }));
 
     WPushButton *accept = new WPushButton("Accept",d->contents());
     accept->clicked().connect(std::bind([=]()
@@ -105,7 +179,7 @@ WDialog * Web::Ui::DatabaseModel::Survey::callSurveyEditDialog(
                                    te->time().hour(),
                                    te->time().minute(),
                                    te->time().second()));
-            this->notes = ta->text().narrow();
+            this->notes = ta->text().toUTF8();
 
             this->label()->setText(
                         this->date.toString("dd.MM.yyyy hh:mm").toStdString() + " " +
@@ -177,7 +251,7 @@ Web::Ui::DatabaseModel::Survey::Survey(
 {
     this->selected().connect(std::bind([=](){
         TREE->viewContainer->clear();
-        TREE->notesContainer->setText(this->notes.data());
+        TREE->notesContainer->setText(Wt::WString(this->notes,CharEncoding::UTF8));
         TREE->buttonsContainer->clear();
 
         DatabaseManagerWt::instance()->loadSurveyWoundImage(this);
@@ -330,13 +404,13 @@ template <class T1, class T2> WDialog * Web::Ui::DatabaseModel::callNotesEditDia
 
     WLabel *lel = new WLabel((title + " name").data(),d->contents());
     WLineEdit *le = new WLineEdit(d->contents());
-    le->setText(target->name.data());
+    le->setText(Wt::WString(target->name,CharEncoding::UTF8));
     lel->setBuddy(le);
     le->resize( CURRENT_SESSION->userScreenWidth - POPUP_DELTA*2,
                 WLength::Auto);
 
     WTextArea *ta = new WTextArea(d->contents());
-    ta->setText(target->notes.data());
+    ta->setText(Wt::WString(target->notes,CharEncoding::UTF8));
     ta->resize(CURRENT_SESSION->userScreenWidth - POPUP_DELTA*2, POPUP_DELTA*2);
     d->contents()->addWidget(new WBreak());
 
@@ -358,10 +432,10 @@ template <class T1, class T2> WDialog * Web::Ui::DatabaseModel::callNotesEditDia
     d->finished().connect(std::bind([=](WDialog::DialogCode code){
         if(code == WDialog::Accepted)
         {
-            target->name = le->text().narrow();
-            target->notes = ta->text().narrow();
+            target->name = le->text().toUTF8();
+            target->notes = ta->text().toUTF8();
 
-            target->label()->setText(target->name.data());
+            target->label()->setText(le->text());
             if(addToTree)
             {
                 DatabaseManagerWt::instance()->add(caller,target);
@@ -406,7 +480,7 @@ template <class T1, class T2> WDialog * Web::Ui::DatabaseModel::callNotesEditDia
 }
 
 DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
-    WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
+    WTreeNode(Wt::WString(title,CharEncoding::UTF8), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
     id(ID),
     name(title),
     notes(notes)
@@ -414,7 +488,7 @@ DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WC
     this->setLoadPolicy(LoadPolicy::NextLevelLoading);
     this->selected().connect(std::bind([=](){
         TREE->viewContainer->clear();
-        TREE->notesContainer->setText(this->notes.data());
+        TREE->notesContainer->setText(Wt::WString(this->notes,CharEncoding::UTF8));
         TREE->buttonsContainer->clear();
 
         if(this->childNodes().size()>1)
@@ -499,14 +573,14 @@ DatabaseModel::Wound::Wound(int ID, const string &title, const string &notes, WC
 }
 
 Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
-    WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
+    WTreeNode(Wt::WString(title,CharEncoding::UTF8), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
     id(ID),
     name(title),
     notes(notes)
 {
     this->selected().connect(std::bind([=](){
         TREE->viewContainer->clear();
-        TREE->notesContainer->setText(this->notes.data());
+        TREE->notesContainer->setText(Wt::WString(this->notes,CharEncoding::UTF8));
         TREE->buttonsContainer->clear();
 
         WPushButton *deleteButton = new WPushButton("Delete patient",TREE->buttonsContainer);
@@ -552,14 +626,14 @@ Web::Ui::DatabaseModel::Patient::Patient(int ID, const string &title, const stri
 }
 
 DatabaseModel::Doctor::Doctor(int ID, const string &title, const string &notes, WContainerWidget *parent, const string &iconPath):
-    WTreeNode(title.data(), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
+    WTreeNode(Wt::WString(title,CharEncoding::UTF8), new WIconPair(iconPath.data(),iconPath.data(),false,parent)),
     id(ID),
     name(title),
     notes(notes)
 {
     this->selected().connect(std::bind([=](){
         TREE->viewContainer->clear();
-        TREE->notesContainer->setText(this->notes.data());
+        TREE->notesContainer->setText(Wt::WString(this->notes,CharEncoding::UTF8));
         TREE->buttonsContainer->clear();
 
         WPushButton *editButton = new WPushButton("Edit doctor",TREE->buttonsContainer);

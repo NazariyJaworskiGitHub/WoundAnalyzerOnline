@@ -50,6 +50,7 @@ class UserSession : public WApplication
                               "\t Support WebGL:      " + (env.webGL()             ? "TRUE\n" : "FALSE\n") +
                               "\t Support JavaScript: " + (env.javaScript()        ? "TRUE\n" : "FALSE\n") +
                               "\t Localization:       " + env.locale().name() + "\n");
+        //this->setLocale(env.locale());
         setTitle(APPLICATION_TITLE);
         setTheme(new WBootstrapTheme());
         enableUpdates(true);
